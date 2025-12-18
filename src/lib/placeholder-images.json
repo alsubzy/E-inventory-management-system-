@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "1",
+      "description": "Wireless Mouse",
+      "imageUrl": "https://images.unsplash.com/photo-1624435299582-fcfcdb329325?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d2lyZWxlc3MlMjBtb3VzZXxlbnwwfHx8fDE3NjU5NzUyOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wireless mouse"
+    },
+    {
+      "id": "2",
+      "description": "Ergonomic Keyboard",
+      "imageUrl": "https://images.unsplash.com/photo-1760348213199-cb69ddf323d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxlcmdvbm9taWMlMjBrZXlib2FyZHxlbnwwfHx8fDE3NjYwMzY1ODV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ergonomic keyboard"
+    },
+    {
+      "id": "3",
+      "description": "USB-C Hub",
+      "imageUrl": "https://images.unsplash.com/photo-1616578273461-3a99ce422de6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx1c2IlMjBodWJ8ZW58MHx8fHwxNzY1OTY3MTk4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "usb hub"
+    },
+    {
+      "id": "4",
+      "description": "4K Monitor",
+      "imageUrl": "https://images.unsplash.com/flagged/photo-1551954810-43cd6aef5b1f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjb21wdXRlciUyMG1vbml0b3J8ZW58MHx8fHwxNzY1OTUzMjUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "computer monitor"
+    },
+    {
+      "id": "5",
+      "description": "Standing Desk",
+      "imageUrl": "https://images.unsplash.com/photo-1622126756000-9fb7f6ed9f06?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzdGFuZGluZyUyMGRlc2t8ZW58MHx8fHwxNzY2MDIzNzQwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "standing desk"
+    },
+    {
+      "id": "6",
+      "description": "Laptop Stand",
+      "imageUrl": "https://images.unsplash.com/flagged/photo-1576697011479-349e2a52bdf6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsYXB0b3AlMjBzdGFuZHxlbnwwfHx8fDE3NjYwNDAwNTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "laptop stand"
+    }
+  ]
 }
