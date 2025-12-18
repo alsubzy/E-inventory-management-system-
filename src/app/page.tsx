@@ -1,22 +1,22 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+// import { useAuth } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
-  const { isSignedIn, isLoaded } = useAuth();
+  // const { isSignedIn, isLoaded } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoaded) {
-      if (isSignedIn) {
-        router.push('/dashboard');
-      } else {
+    // if (isLoaded) {
+    //   if (isSignedIn) {
+    //     router.push('/dashboard');
+    //   } else {
         router.push('/login');
-      }
-    }
-  }, [isLoaded, isSignedIn, router]);
+    //   }
+    // }
+  }, [router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
