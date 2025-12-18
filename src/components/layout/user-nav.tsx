@@ -32,9 +32,9 @@ export function UserNav({ user }: UserNavProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar} alt={user.name} />
+        <Button variant="ghost" className="relative h-12 w-12 rounded-full p-0">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={user.avatar} alt={user.name} data-ai-hint="user avatar" />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
         </Button>

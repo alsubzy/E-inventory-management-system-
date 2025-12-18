@@ -1,10 +1,10 @@
 import type { Product, Sale, User } from './types';
 
 export const mockUser: User = {
-  name: 'Admin User',
-  email: 'admin@stockpilot.com',
+  name: 'Jane Doe',
+  email: 'jane.doe@example.com',
   role: 'Admin',
-  avatar: 'https://i.pravatar.cc/150?u=admin@stockpilot.com',
+  avatar: 'https://i.pravatar.cc/150?u=jane.doe@example.com',
 };
 
 export const mockProducts: Product[] = [
