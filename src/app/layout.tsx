@@ -6,9 +6,9 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'D-inventy - Inventory Management Dashboard',
+  title: 'StockPilot - Inventory Management System',
   description:
-    'A comprehensive Inventory Management Dashboard built with Next.js.',
+    'A comprehensive Inventory Management System built with Next.js.',
 };
 
 export default function RootLayout({
