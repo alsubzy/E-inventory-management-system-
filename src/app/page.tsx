@@ -80,7 +80,7 @@ export default function LoginPage() {
                 Very simple way you can engage
               </h2>
               <p className="mt-4 text-gray-300/80">
-                Welcome to D-inventy Management System! Efficiently track and manage your inventory with ease.
+                Welcome to E-inventory Management system! Efficiently track and manage your inventory with ease.
               </p>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export const metadata: Metadata = {
-  title: 'D-inventy - Inventory Management System',
+  title: 'E-inventory Management system - Inventory Management System',
   description:
     'A comprehensive Inventory Management System built with Next.js.',
 };

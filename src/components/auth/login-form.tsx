@@ -83,7 +83,7 @@ export function LoginForm() {
   return (
     <div className="flex flex-col">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Sign in to D-inventy</h1>
+        <h1 className="text-3xl font-bold">Sign in to E-inventory Management system</h1>
         <p className="text-muted-foreground">Enter your details below to access your account.</p>
       </div>
 
