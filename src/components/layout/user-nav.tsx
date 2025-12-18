@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { type User } from '@/lib/types';
 import { LogOut, User as UserIcon } from 'lucide-react';
-// import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
 
@@ -22,11 +21,9 @@ interface UserNavProps {
 }
 
 export function UserNav({ user }: UserNavProps) {
-  // const { signOut } = useClerk();
   const router = useRouter();
 
   const handleSignOut = () => {
-    // signOut({ redirectUrl: '/login' });
     router.push('/login');
   };
 
