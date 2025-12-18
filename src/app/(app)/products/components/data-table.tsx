@@ -10,6 +10,8 @@ import {
   useReactTable,
   type SortingState,
   type ColumnFiltersState,
+  type VisibilityState,
+  type RowSelectionState,
 } from '@tanstack/react-table';
 import {
   Table,
