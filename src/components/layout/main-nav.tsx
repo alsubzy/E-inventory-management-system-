@@ -73,7 +73,7 @@ export function MainNav() {
       <div className="mt-auto">
         <SidebarMenu>
              {supportMenuItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
+                <SidebarMenuItem key={item.label}>
                 <Link href={item.href} passHref>
                     <SidebarMenuButton className="justify-start" variant="ghost">
                     <item.icon className="h-5 w-5" />
