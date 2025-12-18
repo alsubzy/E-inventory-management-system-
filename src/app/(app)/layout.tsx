@@ -18,11 +18,11 @@ export default async function AppLayout({
     redirect('/login');
   }
   
-  const mockUser = {
+  const appUser = {
     name: user.firstName ? `${user.firstName} ${user.lastName}` : 'User',
     email: user.emailAddresses[0]?.emailAddress || '',
     avatar: user.imageUrl,
-    role: (user.publicMetadata.role as 'Admin' | 'Staff') || 'Staff',
+    role: (user.publicMetadata?.role as 'Admin' | 'Staff') || 'Staff',
   };
 
   return (
@@ -44,7 +44,7 @@ export default async function AppLayout({
         </div>
       </Sidebar>
       <div className="flex flex-1 flex-col">
-        <Header user={mockUser} />
+        <Header user={appUser} />
         <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8">
             <SidebarInset>{children}</SidebarInset>
         </main>

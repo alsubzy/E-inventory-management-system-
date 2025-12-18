@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function DInventyLogo({ className }: { className?: string }) {
+export function EInventoryLogo({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 40 40"
