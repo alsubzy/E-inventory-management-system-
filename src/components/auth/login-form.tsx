@@ -19,8 +19,8 @@ import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
-import { useSignIn } from '@clerk/nextjs';
-import type { ClerkAPIError } from '@clerk/types';
+// import { useSignIn } from '@clerk/nextjs';
+// import type { ClerkAPIError } from '@clerk/types';
 
 const FormSchema = z.object({
   email: z.string().email({
@@ -50,7 +50,8 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function LoginForm() {
   const router = useRouter();
-  const { signIn, setActive, isLoaded } = useSignIn();
+  // const { signIn, setActive, isLoaded } = useSignIn();
+  const isLoaded = true; // Placeholder
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
@@ -68,34 +69,43 @@ export function LoginForm() {
       return;
     }
     setIsLoading(true);
-    try {
-      const result = await signIn.create({
-        identifier: data.email,
-        password: data.password,
-      });
-
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        toast({
-          title: 'Login Successful',
-          description: "Welcome back! You're being redirected.",
-        });
-        router.push('/dashboard');
-      } else {
-        // Handle other statuses like 'needs_first_factor', 'needs_second_factor', etc.
-        console.log(result);
-      }
-    } catch (err) {
-      const clerkError = err as { errors: ClerkAPIError[] };
-      const errorMessage = clerkError.errors?.[0]?.longMessage || 'An unknown error occurred.';
+    // Mock successful login for UI purposes
+    setTimeout(() => {
       toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: errorMessage,
+        title: 'Login Successful',
+        description: "Welcome back! You're being redirected.",
       });
-    } finally {
+      router.push('/dashboard');
       setIsLoading(false);
-    }
+    }, 1000);
+    // try {
+    //   const result = await signIn.create({
+    //     identifier: data.email,
+    //     password: data.password,
+    //   });
+
+    //   if (result.status === 'complete') {
+    //     await setActive({ session: result.createdSessionId });
+    //     toast({
+    //       title: 'Login Successful',
+    //       description: "Welcome back! You're being redirected.",
+    //     });
+    //     router.push('/dashboard');
+    //   } else {
+    //     // Handle other statuses like 'needs_first_factor', 'needs_second_factor', etc.
+    //     console.log(result);
+    //   }
+    // } catch (err) {
+    //   const clerkError = err as { errors: ClerkAPIError[] };
+    //   const errorMessage = clerkError.errors?.[0]?.longMessage || 'An unknown error occurred.';
+    //   toast({
+    //     variant: 'destructive',
+    //     title: 'Login Failed',
+    //     description: errorMessage,
+    //   });
+    // } finally {
+    //   setIsLoading(false);
+    // }
   }
 
   return (

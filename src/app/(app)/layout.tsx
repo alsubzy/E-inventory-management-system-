@@ -4,26 +4,29 @@ import { Header } from '@/components/layout/header';
 import { Button } from '@/components/ui/button';
 import { PanelLeftClose } from 'lucide-react';
 import { EInventoryLogo } from '@/components/e-inventory-logo';
-import { currentUser } from '@clerk/nextjs/server';
+// import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
+import { mockUser } from '@/lib/data';
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await currentUser();
+  // const user = await currentUser();
 
-  if (!user) {
-    redirect('/login');
-  }
+  // if (!user) {
+  //   redirect('/login');
+  // }
   
-  const appUser = {
-    name: user.firstName ? `${user.firstName} ${user.lastName}` : 'User',
-    email: user.emailAddresses[0]?.emailAddress || '',
-    avatar: user.imageUrl,
-    role: (user.publicMetadata?.role as 'Admin' | 'Staff') || 'Staff',
-  };
+  // const appUser = {
+  //   name: user.firstName ? `${user.firstName} ${user.lastName}` : 'User',
+  //   email: user.emailAddresses[0]?.emailAddress || '',
+  //   avatar: user.imageUrl,
+  //   role: (user.publicMetadata?.role as 'Admin' | 'Staff') || 'Staff',
+  // };
+
+  const appUser = mockUser;
 
   return (
     <SidebarProvider>
