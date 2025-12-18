@@ -13,14 +13,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { type User } from '@/lib/types';
 import { LogOut, User as UserIcon } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useClerk } from '@clerk/nextjs';
 
 interface UserNavProps {
   user: User;
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const router = useRouter();
+  const { signOut } = useClerk();
 
   const getInitials = (name: string) => {
     return name
@@ -56,7 +56,7 @@ export function UserNav({ user }: UserNavProps) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/')}>
+        <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/login' })}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

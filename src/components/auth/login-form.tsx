@@ -16,16 +16,18 @@ import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
+import { useSignIn } from '@clerk/nextjs';
+import type { ClerkAPIError } from '@clerk/types';
 
 const FormSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
-  password: z.string().min(6, {
-    message: 'Password must be at least 6 characters.',
+  password: z.string().min(1, {
+    message: 'Password is required.',
   }),
 });
 
@@ -48,8 +50,10 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function LoginForm() {
   const router = useRouter();
+  const { signIn, setActive, isLoaded } = useSignIn();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -59,25 +63,39 @@ export function LoginForm() {
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    if (!isLoaded) {
+      return;
+    }
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      if ((data.email === 'admin@stockpilot.com' || data.email === 'staff@stockpilot.com') && data.password === 'password') {
+    try {
+      const result = await signIn.create({
+        identifier: data.email,
+        password: data.password,
+      });
+
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
         toast({
           title: 'Login Successful',
           description: "Welcome back! You're being redirected.",
         });
         router.push('/dashboard');
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: 'Invalid email or password. Please try again.',
-        });
-        setIsLoading(false);
+        // Handle other statuses like 'needs_first_factor', 'needs_second_factor', etc.
+        console.log(result);
       }
-    }, 1500);
+    } catch (err) {
+      const clerkError = err as { errors: ClerkAPIError[] };
+      const errorMessage = clerkError.errors?.[0]?.longMessage || 'An unknown error occurred.';
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -144,8 +162,8 @@ export function LoginForm() {
           </div>
 
 
-          <Button type="submit" className="w-full h-12 bg-[#00444F] hover:bg-[#003a44] text-base" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" className="w-full h-12 bg-[#00444F] hover:bg-[#003a44] text-base" disabled={isLoading || !isLoaded}>
+            {(isLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Sign In
           </Button>
         </form>

@@ -1,5 +1,6 @@
 import type { Product, Sale, User } from './types';
 
+// This is now a mock for when Clerk user is not available
 export const mockUser: User = {
   name: 'Jane Doe',
   email: 'jane.doe@example.com',
