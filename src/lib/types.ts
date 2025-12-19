@@ -108,6 +108,52 @@ export interface Transaction {
   reference?: string;
 }
 
+export type SalesStatus = 'COMPLETED' | 'CANCELLED' | 'RETURNED';
+export type PaymentStatus = 'PAID' | 'PARTIAL' | 'UNPAID';
+
+export interface Sale {
+  id: string;
+  saleNumber: string;
+  customerId: string;
+  warehouseId: string;
+  totalAmount: number;
+  discountAmount: number;
+  taxAmount: number;
+  netAmount: number;
+  paidAmount: number;
+  balanceAmount: number;
+  paymentStatus: PaymentStatus;
+  status: SalesStatus;
+  userId: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  items?: SaleItem[];
+}
+
+export interface SaleItem {
+  id: string;
+  saleId: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  unitPrice: number;
+  discountAmount: number;
+  taxAmount: number;
+  totalAmount: number;
+}
+
+export interface Invoice {
+  id: string;
+  saleId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  totalAmount: number;
+  pdfUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;

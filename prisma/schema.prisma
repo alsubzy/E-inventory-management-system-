@@ -20,109 +20,163 @@ model Category {
 }
 
 model Product {
-  id           String     @id @default(uuid())
-  name         String
-  description  String?
-  sku          String     @unique
-  barcode      String?
-  unit         String     // pcs, kg, etc.
-  costPrice    Float
-  sellingPrice Float
-  taxRate      Float?     @default(0)
-  reorderLevel Int        @default(0)
-  status       String     @default("ACTIVE") // ACTIVE, INACTIVE
-  categoryId   String?
-  category     Category?  @relation(fields: [categoryId], references: [id])
-  supplierId   String?    // Link to Supplier
-  variants     Variant[]
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  sku           String        @unique
+  barcode       String?
+  unit          String // pcs, kg, etc.
+  costPrice     Float
+  sellingPrice  Float
+  taxRate       Float?        @default(0)
+  reorderLevel  Int           @default(0)
+  status        String        @default("ACTIVE") // ACTIVE, INACTIVE
+  categoryId    String?
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  supplierId    String? // Link to Supplier
+  variants      Variant[]
   ledgerEntries StockLedger[]
-  isDeleted    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  saleItems     SaleItem[]
+  isDeleted     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Variant {
-  id           String     @id @default(uuid())
-  productId    String
-  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name         String     // e.g., "Size: L", "Color: Blue"
-  sku          String     @unique
-  barcode      String?
-  costPrice    Float?     // Override
-  sellingPrice Float?     // Override
-  stockQuantity Int       @default(0)
-  isDeleted    Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id            String     @id @default(uuid())
+  productId     String
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name          String // e.g., "Size: L", "Color: Blue"
+  sku           String     @unique
+  barcode       String?
+  costPrice     Float? // Override
+  sellingPrice  Float? // Override
+  stockQuantity Int        @default(0)
+  saleItems     SaleItem[]
+  isDeleted     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 model Warehouse {
-  id          String     @id @default(uuid())
-  name        String
-  location    String?
+  id            String        @id @default(uuid())
+  name          String
+  location      String?
   ledgerEntries StockLedger[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  sales         Sale[]
 }
 
 model StockLedger {
-  id              String   @id @default(uuid())
-  productId       String
-  product         Product  @relation(fields: [productId], references: [id])
-  variantId       String?
-  warehouseId     String
-  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
-  quantityChange  Int      // Positive for IN, negative for OUT
-  type            String   // PURCHASE, SALE, RETURN, ADJUSTMENT, TRANSFER
-  referenceId     String?  // ID of the order/transaction
-  note            String?
-  userId          String
-  createdAt       DateTime @default(now())
+  id             String    @id @default(uuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id])
+  variantId      String?
+  warehouseId    String
+  warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
+  quantityChange Int // Positive for IN, negative for OUT
+  type           String // PURCHASE, SALE, RETURN, ADJUSTMENT, TRANSFER
+  referenceId    String? // ID of the order/transaction
+  note           String?
+  userId         String
+  createdAt      DateTime  @default(now())
 }
 
 model Party {
-  id              String        @id @default(uuid())
-  name            String
-  type            String        // SUPPLIER, CUSTOMER, BOTH
-  phone           String
-  email           String?
-  address         String
-  openingBalance  Float         @default(0)
-  currentBalance  Float         @default(0)
-  status          String        @default("ACTIVE") // ACTIVE, INACTIVE
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
-  ledgers         PartyLedger[]
-  payments        Payment[]
+  id             String   @id @default(uuid())
+  name           String
+  type           String // SUPPLIER, CUSTOMER, BOTH
+  phone          String
+  email          String?
+  address        String
+  openingBalance Float    @default(0)
+  currentBalance Float    @default(0)
+  status         String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ledgers  PartyLedger[]
+  payments Payment[]
+  sales    Sale[]
 }
 
 model Payment {
-  id        String        @id @default(uuid())
+  id        String   @id @default(uuid())
   partyId   String
-  party     Party         @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  party     Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
   amount    Float
-  method    String        // CASH, BANK, MOBILE_MONEY
-  type      String        // PAYMENT_MADE, PAYMENT_RECEIVED, ADVANCE
+  method    String // CASH, BANK, MOBILE_MONEY
+  type      String // PAYMENT_MADE, PAYMENT_RECEIVED, ADVANCE
   reference String?
   date      DateTime
   note      String?
-  createdAt DateTime      @default(now())
-  
-  ledgers   PartyLedger[]
+  createdAt DateTime @default(now())
+
+  ledgers PartyLedger[]
 }
 
 model PartyLedger {
-  id             String    @id @default(uuid())
+  id             String   @id @default(uuid())
   partyId        String
-  party          Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  party          Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
   paymentId      String?
-  payment        Payment?  @relation(fields: [paymentId], references: [id])
+  payment        Payment? @relation(fields: [paymentId], references: [id])
   transactionId  String?
   date           DateTime
   description    String
-  type           String    // DEBIT or CREDIT
+  type           String // DEBIT or CREDIT
   amount         Float
   runningBalance Float
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime @default(now())
+}
+
+model Sale {
+  id             String     @id @default(uuid())
+  saleNumber     String     @unique
+  customerId     String
+  customer       Party      @relation(fields: [customerId], references: [id])
+  warehouseId    String
+  warehouse      Warehouse  @relation(fields: [warehouseId], references: [id])
+  totalAmount    Float // Gross total
+  discountAmount Float      @default(0)
+  taxAmount      Float      @default(0)
+  netAmount      Float // Final total
+  paidAmount     Float      @default(0)
+  balanceAmount  Float      @default(0)
+  paymentStatus  String // PAID, PARTIAL, UNPAID
+  status         String     @default("COMPLETED") // COMPLETED, CANCELLED, RETURNED
+  userId         String
+  notes          String?
+  items          SaleItem[]
+  invoice        Invoice?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model SaleItem {
+  id             String   @id @default(uuid())
+  saleId         String
+  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  variantId      String?
+  variant        Variant? @relation(fields: [variantId], references: [id])
+  quantity       Int
+  unitPrice      Float
+  discountAmount Float    @default(0)
+  taxAmount      Float    @default(0)
+  totalAmount    Float // quantity * unitPrice - discount + tax
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  saleId        String   @unique
+  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  invoiceNumber String   @unique
+  invoiceDate   DateTime @default(now())
+  totalAmount   Float
+  pdfUrl        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

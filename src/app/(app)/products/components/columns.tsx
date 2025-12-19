@@ -79,7 +79,8 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: 'category',
     header: 'Category',
     cell: ({ row }) => {
-      return <Badge variant="secondary">{row.getValue('category')}</Badge>;
+      const category = row.original.category;
+      return category ? <Badge variant="secondary">{category.name}</Badge> : <span className="text-muted-foreground">-</span>;
     },
   },
   {

@@ -21,10 +21,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 import { createProductDB, updateProductDB } from '@/lib/actions/products-db';
 import { getCategoriesDB } from '@/lib/actions/categories-db';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
+import { CategoryForm } from '@/app/(app)/categories/components/category-form';
 
 interface ProductFormProps {
     initialData?: ProductFormValues & { id: string };
@@ -34,14 +43,16 @@ interface ProductFormProps {
 export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<any[]>([]);
+    const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+
+    async function loadCategories() {
+        const result = await getCategoriesDB();
+        if (result.success) {
+            setCategories(result.categories);
+        }
+    }
 
     useEffect(() => {
-        async function loadCategories() {
-            const result = await getCategoriesDB();
-            if (result.success) {
-                setCategories(result.categories);
-            }
-        }
         loadCategories();
     }, []);
 
@@ -141,20 +152,43 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Category</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a category" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {categories.map((cat) => (
-                                        <SelectItem key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex gap-2">
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a category" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat.id} value={cat.id}>
+                                                {cat.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="icon" type="button">
+                                            <PlusCircle className="h-4 w-4" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Add New Category</DialogTitle>
+                                            <DialogDescription>
+                                                Create a new category immediately.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <CategoryForm
+                                            onSuccess={() => {
+                                                setIsCategoryDialogOpen(false);
+                                                loadCategories();
+                                            }}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
                             <FormMessage />
                         </FormItem>
                     )}

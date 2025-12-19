@@ -4,7 +4,15 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   LayoutDashboard,
   Package,
@@ -25,6 +33,7 @@ import {
   CreditCard,
   LogOut,
   ChevronRight,
+  ChevronDown, // Added for collapsible indicator
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -32,21 +41,59 @@ import { cn } from '@/lib/utils';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { checkRole, UserRole } from '@/lib/auth';
 
-const mainMenuItems: { href: string; label: string; icon: any; roles?: UserRole[]; hasSubmenu?: boolean }[] = [
+// Define the menu structure types
+interface SubMenuItem {
+  href: string;
+  label: string;
+  roles?: UserRole[];
+}
+
+interface MenuItem {
+  href?: string; // Optional for group headers
+  label: string;
+  icon: any;
+  roles?: UserRole[];
+  items?: SubMenuItem[]; // Submenu items
+}
+
+const mainMenuItems: MenuItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/parties', label: 'Parties', icon: Users, hasSubmenu: true },
-  { href: '/products', label: 'Product Manager', icon: Package, hasSubmenu: true },
-  { href: '/sales', label: 'Sales', icon: ShoppingBag, hasSubmenu: true },
-  { href: '/purchases', label: 'Purchases', icon: ShoppingCart, hasSubmenu: true },
-  { href: '/stock-transfer', label: 'Stock Transfer', icon: ArrowRightLeft, hasSubmenu: true },
-  { href: '/pos', label: 'POS', icon: Monitor, hasSubmenu: true },
-  { href: '/cash-bank', label: 'Cash & Bank', icon: Landmark, hasSubmenu: true },
-  { href: '/expenses', label: 'Expenses', icon: Receipt, hasSubmenu: true },
-  { href: '/staff-members', label: 'Staff Members', icon: UserCheck, hasSubmenu: true },
-  { href: '/sales-reports', label: 'Sales Reports', icon: BarChart2, hasSubmenu: true },
-  { href: '/online-orders', label: 'Online Orders', icon: Globe, hasSubmenu: true },
-  { href: '/settings', label: 'Settings', icon: Settings, roles: ['ADMIN'], hasSubmenu: true },
-  { href: '/subscription', label: 'Subscription', icon: CreditCard, hasSubmenu: true },
+  {
+    label: 'Products',
+    icon: Package,
+    items: [
+      { href: '/products', label: 'Products' },
+      { href: '/categories', label: 'Categories' },
+    ]
+  },
+  {
+    label: 'Parties',
+    icon: Users,
+    items: [
+      { href: '/parties', label: 'Customers' }, // Using general parties page for now
+      { href: '/parties', label: 'Suppliers' },
+    ]
+  },
+  { href: '/sales', label: 'Sales', icon: ShoppingBag },
+  { href: '/pos', label: 'POS', icon: Monitor },
+  { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
+  { href: '/stock-transfer', label: 'Stock Transfer', icon: ArrowRightLeft },
+  { href: '/cash-bank', label: 'Cash & Bank', icon: Landmark },
+  { href: '/expenses', label: 'Expenses', icon: Receipt },
+  {
+    label: 'Reports',
+    icon: BarChart2,
+    items: [
+      { href: '/sales-reports', label: 'Sales' },
+      { href: '/reports', label: 'Stock' },
+      { href: '/reports', label: 'Purchases' }, // Placeholder
+      { href: '/reports', label: 'Profit & Loss' },
+    ]
+  },
+  { href: '/staff-members', label: 'Staff & Roles', icon: UserCheck },
+  { href: '/online-orders', label: 'Online Orders', icon: Globe },
+  { href: '/subscription', label: 'Subscription', icon: CreditCard },
+  { href: '/settings', label: 'Settings', icon: Settings, roles: ['ADMIN'] },
 ];
 
 const supportMenuItems = [
@@ -66,39 +113,94 @@ export function MainNav() {
     router.push('/login');
   };
 
-  const filteredItems = mainMenuItems.filter(item => {
-    if (!item.roles) return true;
-    return checkRole(user, item.roles);
-  });
-
-  const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === href;
+  const isActive = (href?: string, items?: SubMenuItem[]) => {
+    if (href === '/dashboard' || href === '/') {
+      return pathname === '/dashboard' || pathname === '/';
     }
-    return pathname.startsWith(href);
+    // Check if parent is active (exact match)
+    if (href && pathname.startsWith(href)) return true;
+
+    // Check if any child is active
+    if (items) {
+      return items.some(item => pathname.startsWith(item.href));
+    }
+    return false;
   };
+
+  const isExactActive = (href: string) => {
+    // For submenu items, we generally want exact match or deep prefix if distinct
+    // But since some share /parties, we might just check prefix
+    return pathname.startsWith(href);
+  }
 
   return (
     <nav className="p-2 flex flex-col h-full">
       <SidebarMenu className="gap-2">
-        {filteredItems.map((item) => (
-          <SidebarMenuItem key={item.label}>
-            <Link href={item.href} passHref>
+        {mainMenuItems.map((item, index) => {
+          // Check role access
+          if (item.roles && !checkRole(user, item.roles)) return null;
+
+          // Render Group with Submenu
+          if (item.items) {
+            const isGroupActive = isActive(undefined, item.items);
+            return (
+              <Collapsible key={index} defaultOpen={isGroupActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      tooltip={item.label}
+                      className={cn(
+                        "w-full justify-between",
+                        (isGroupActive && !item.href) ? "font-semibold text-primary" : ""
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </span>
+                      <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => (
+                        // Check role access for subitems if needed (none specified in plan, but good practice)
+                        (!subItem.roles || checkRole(user, subItem.roles)) && (
+                          <SidebarMenuItem key={subItem.label}>
+                            <SidebarMenuSubButton asChild isActive={isExactActive(subItem.href) && subItem.label === 'Categories' ? pathname.includes('categories') : isExactActive(subItem.href)}>
+                              <Link href={subItem.href}>
+                                <span>{subItem.label}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuItem>
+                        )
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            )
+          }
+
+          // Render Single Item
+          return (
+            <SidebarMenuItem key={item.label}>
               <SidebarMenuButton
+                asChild
                 isActive={isActive(item.href)}
+                tooltip={item.label}
                 className={cn(
-                  "justify-start h-11 px-4 rounded-xl transition-all duration-200",
-                  isActive(item.href)
-                    ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
-                    : "text-[#64748B] hover:text-primary hover:bg-[#F3F8F8]"
+                  isActive(item.href) && "font-semibold bg-primary/5 text-primary"
                 )}
               >
-                <item.icon className={cn("h-5 w-5", isActive(item.href) ? "text-white" : "text-[#64748B]")} />
-                <span className="flex-1 text-sm font-semibold ml-3">{item.label}</span>
+                <Link href={item.href || '#'}>
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
               </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        ))}
+            </SidebarMenuItem>
+          );
+        })}
       </SidebarMenu>
 
       <div className="mt-auto pt-4 border-t border-white/5">
@@ -129,3 +231,4 @@ export function MainNav() {
     </nav>
   );
 }
+

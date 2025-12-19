@@ -1,5 +1,8 @@
-'use client';
-import { ResetPasswordForm } from '@/components/auth/reset-password-form';
+import dynamic from 'next/dynamic';
+const ResetPasswordForm = dynamic(() => import('@/components/auth/reset-password-form').then(mod => mod.ResetPasswordForm), {
+    ssr: false,
+    loading: () => <div className="h-[300px] flex items-center justify-center font-medium text-muted-foreground">Preparing...</div>
+});
 import { Card } from '@/components/ui/card';
 import { EInventoryLogo } from '@/components/e-inventory-logo';
 

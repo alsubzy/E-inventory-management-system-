@@ -84,6 +84,45 @@ export async function getProductsDB() {
     }
 }
 
+export async function getProductsWithStockDB(warehouseId?: string) {
+    try {
+        const where: any = { isDeleted: false }
+
+        const ledgerWhere: any = {}
+        if (warehouseId) {
+            ledgerWhere.warehouseId = warehouseId
+        }
+
+        const products = await prisma.product.findMany({
+            where,
+            include: {
+                category: true,
+                ledgerEntries: {
+                    where: ledgerWhere,
+                    select: {
+                        quantityChange: true
+                    }
+                }
+            },
+            orderBy: { name: 'asc' }
+        })
+
+        const productsWithStock = products.map(p => {
+            const totalStock = p.ledgerEntries.reduce((sum, entry) => sum + entry.quantityChange, 0)
+            return {
+                ...p,
+                totalStock,
+                ledgerEntries: undefined
+            }
+        })
+
+        return { success: true, products: productsWithStock }
+    } catch (error) {
+        console.error('Error fetching products with stock:', error)
+        return { success: false, error: 'Failed to fetch products with stock', products: [] }
+    }
+}
+
 export async function getProductDB(id: string) {
     try {
         const product = await prisma.product.findUnique({
