@@ -51,12 +51,57 @@ export interface TransactionItem {
   price: number;
 }
 
+export type PartyType = 'SUPPLIER' | 'CUSTOMER' | 'BOTH';
+export type BalanceType = 'DEBIT' | 'CREDIT';
+export type PaymentTerms = 'CASH' | 'CREDIT' | 'NET_DAYS';
+
+export interface Party {
+  id: string;
+  name: string;
+  type: PartyType;
+  phone: string;
+  email: string;
+  address: string;
+  openingBalance: number;
+  balanceType: BalanceType;
+  currentBalance: number;
+  paymentTerms: PaymentTerms;
+  creditLimit: number;
+  status: 'ACTIVE' | 'INACTIVE';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartyLedgerEntry {
+  id: string;
+  partyId: string;
+  transactionId?: string;
+  paymentId?: string;
+  date: string;
+  description: string;
+  type: 'DEBIT' | 'CREDIT';
+  amount: number;
+  runningBalance: number;
+}
+
+export interface Payment {
+  id: string;
+  partyId: string;
+  amount: number;
+  method: 'CASH' | 'BANK' | 'MOBILE_MONEY';
+  type: 'PAYMENT_MADE' | 'PAYMENT_RECEIVED' | 'ADVANCE';
+  reference?: string;
+  date: string;
+  note?: string;
+}
+
 export interface Transaction {
   id: string;
   type: 'IN' | 'OUT' | 'TRANSFER';
   items: TransactionItem[];
   fromWarehouseId?: string;
   toWarehouseId?: string;
+  partyId?: string; // Linked Party
   status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
   date: string;
   userId: string;

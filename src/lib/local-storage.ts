@@ -1,6 +1,6 @@
 "use client";
 
-import { Product, Warehouse, Transaction, Stock, AuditLog } from "./types";
+import { Product, Warehouse, Transaction, Stock, AuditLog, Party, PartyLedgerEntry, Payment } from "./types";
 
 const STORAGE_KEYS = {
     PRODUCTS: "inventory_products",
@@ -8,6 +8,9 @@ const STORAGE_KEYS = {
     TRANSACTIONS: "inventory_transactions",
     STOCKS: "inventory_stocks",
     AUDIT_LOGS: "inventory_audit_logs",
+    PARTIES: "inventory_parties",
+    LEDGERS: "inventory_ledgers",
+    PAYMENTS: "inventory_payments",
 };
 
 class LocalStorageManager {
@@ -57,11 +60,88 @@ class LocalStorageManager {
     updateWarehouse(id: string, data: Partial<Warehouse>) { this.update(STORAGE_KEYS.WAREHOUSES, id, data); }
     deleteWarehouse(id: string) { this.delete(STORAGE_KEYS.WAREHOUSES, id); }
 
+    // Parties
+    getParties() { return this.get<Party>(STORAGE_KEYS.PARTIES); }
+    createParty(party: Party) { this.create(STORAGE_KEYS.PARTIES, party); }
+    updateParty(id: string, data: Partial<Party>) { this.update(STORAGE_KEYS.PARTIES, id, data); }
+    deleteParty(id: string) { this.delete(STORAGE_KEYS.PARTIES, id); }
+
+    // Ledgers
+    getLedgers(partyId?: string) {
+        const all = this.get<PartyLedgerEntry>(STORAGE_KEYS.LEDGERS);
+        return partyId ? all.filter(l => l.partyId === partyId) : all;
+    }
+
+    private createLedgerEntry(entry: PartyLedgerEntry) {
+        this.create(STORAGE_KEYS.LEDGERS, entry);
+        // Update party current balance
+        const parties = this.getParties();
+        const partyIndex = parties.findIndex(p => p.id === entry.partyId);
+        if (partyIndex !== -1) {
+            const amount = entry.type === 'DEBIT' ? entry.amount : -entry.amount;
+            parties[partyIndex].currentBalance += amount;
+            parties[partyIndex].updatedAt = new Date().toISOString();
+            this.set(STORAGE_KEYS.PARTIES, parties);
+        }
+    }
+
+    // Payments
+    getPayments(partyId?: string) {
+        const all = this.get<Payment>(STORAGE_KEYS.PAYMENTS);
+        return partyId ? all.filter(p => p.partyId === partyId) : all;
+    }
+
+    processPayment(payment: Payment) {
+        this.create(STORAGE_KEYS.PAYMENTS, payment);
+
+        // Create ledger entry
+        const parties = this.getParties();
+        const party = parties.find(p => p.id === payment.partyId);
+        if (party) {
+            const entry: PartyLedgerEntry = {
+                id: Math.random().toString(36).substr(2, 9),
+                partyId: payment.partyId,
+                paymentId: payment.id,
+                date: payment.date,
+                description: `Payment ${payment.type.replace('_', ' ')} (${payment.method})`,
+                type: payment.type === 'PAYMENT_RECEIVED' ? 'CREDIT' : 'DEBIT',
+                amount: payment.amount,
+                runningBalance: party.currentBalance + (payment.type === 'PAYMENT_RECEIVED' ? -payment.amount : payment.amount)
+            };
+            this.createLedgerEntry(entry);
+        }
+    }
+
     // Transactions
     getTransactions() { return this.get<Transaction>(STORAGE_KEYS.TRANSACTIONS); }
     createTransaction(transaction: Transaction) {
         this.create(STORAGE_KEYS.TRANSACTIONS, transaction);
         this.updateStockFromTransaction(transaction);
+
+        if (transaction.partyId) {
+            this.updateLedgerFromTransaction(transaction);
+        }
+    }
+
+    private updateLedgerFromTransaction(transaction: Transaction) {
+        const parties = this.getParties();
+        const party = parties.find(p => p.id === transaction.partyId);
+        if (!party) return;
+
+        const amount = transaction.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
+        const type: 'DEBIT' | 'CREDIT' = transaction.type === 'IN' ? 'CREDIT' : 'DEBIT'; // Purchase = Credit (Payable), Sale = Debit (Receivable)
+
+        const entry: PartyLedgerEntry = {
+            id: Math.random().toString(36).substr(2, 9),
+            partyId: transaction.partyId,
+            transactionId: transaction.id,
+            date: transaction.date,
+            description: `${transaction.type} Transaction ${transaction.reference || transaction.id}`,
+            type,
+            amount,
+            runningBalance: party.currentBalance + (type === 'DEBIT' ? amount : -amount)
+        };
+        this.createLedgerEntry(entry);
     }
 
     // Stocks

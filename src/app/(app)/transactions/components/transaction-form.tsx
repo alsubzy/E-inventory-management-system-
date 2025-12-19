@@ -21,10 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { storageManager } from '@/lib/local-storage';
 import { createTransaction } from '@/lib/actions/transactions';
-import { getProducts } from '@/lib/actions/products';
-import { getWarehouses } from '@/lib/actions/warehouses';
-import { Product, Warehouse } from '@/lib/types';
+import { Product, Warehouse, Party } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
@@ -37,10 +36,12 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
     const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState<Product[]>([]);
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+    const [parties, setParties] = useState<Party[]>([]);
 
     useEffect(() => {
-        setProducts(getProducts() as Product[]);
-        setWarehouses(getWarehouses() as Warehouse[]);
+        setProducts(storageManager.getProducts());
+        setWarehouses(storageManager.getWarehouses());
+        setParties(storageManager.getParties());
     }, []);
 
     const form = useForm<TransactionFormValues>({
@@ -50,6 +51,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
             items: [{ productId: '', quantity: 1, price: 0 }],
             fromWarehouseId: '',
             toWarehouseId: '',
+            partyId: '',
             reference: '',
         },
     });
@@ -121,6 +123,33 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(type === 'IN' || type === 'OUT') && (
+                        <FormField
+                            control={form.control}
+                            name="partyId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{type === 'IN' ? 'Supplier' : 'Customer'}</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={`Select ${type === 'IN' ? 'supplier' : 'customer'}`} />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {parties
+                                                .filter(p => p.type === 'BOTH' || (type === 'IN' ? p.type === 'SUPPLIER' : p.type === 'CUSTOMER'))
+                                                .map(p => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
+
                     {(type === 'OUT' || type === 'TRANSFER') && (
                         <FormField
                             control={form.control}

@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  parentId    String?
+  parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToCategory")
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Product {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  sku          String     @unique
+  barcode      String?
+  unit         String     // pcs, kg, etc.
+  costPrice    Float
+  sellingPrice Float
+  taxRate      Float?     @default(0)
+  reorderLevel Int        @default(0)
+  status       String     @default("ACTIVE") // ACTIVE, INACTIVE
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  supplierId   String?    // Link to Supplier
+  variants     Variant[]
+  ledgerEntries StockLedger[]
+  isDeleted    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Variant {
+  id           String     @id @default(uuid())
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name         String     // e.g., "Size: L", "Color: Blue"
+  sku          String     @unique
+  barcode      String?
+  costPrice    Float?     // Override
+  sellingPrice Float?     // Override
+  stockQuantity Int       @default(0)
+  isDeleted    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Warehouse {
+  id          String     @id @default(uuid())
+  name        String
+  location    String?
+  ledgerEntries StockLedger[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model StockLedger {
+  id              String   @id @default(uuid())
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  variantId       String?
+  warehouseId     String
+  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
+  quantityChange  Int      // Positive for IN, negative for OUT
+  type            String   // PURCHASE, SALE, RETURN, ADJUSTMENT, TRANSFER
+  referenceId     String?  // ID of the order/transaction
+  note            String?
+  userId          String
+  createdAt       DateTime @default(now())
+}
