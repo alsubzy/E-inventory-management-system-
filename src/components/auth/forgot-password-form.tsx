@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSignIn, useAuth } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FormLabel } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -27,7 +27,7 @@ export function ForgotPasswordForm() {
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!isLoaded) return;
+        if (!isLoaded || !signIn) return;
 
         setIsLoading(true);
         try {
@@ -53,6 +53,14 @@ export function ForgotPasswordForm() {
         }
     }
 
+    if (!isLoaded) {
+        return (
+            <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col">
             <div className="mb-8">
@@ -62,8 +70,9 @@ export function ForgotPasswordForm() {
 
             <form onSubmit={onSubmit} className="space-y-4">
                 <div className="space-y-2">
-                    <FormLabel>Email</FormLabel>
+                    <Label htmlFor="email">Email</Label>
                     <Input
+                        id="email"
                         type="email"
                         placeholder="Enter your email"
                         value={email}
@@ -73,7 +82,7 @@ export function ForgotPasswordForm() {
                     />
                 </div>
 
-                <Button type="submit" className="w-full h-12 bg-[#00444F] hover:bg-[#003a44] text-base" disabled={isLoading}>
+                <Button type="submit" className="w-full h-12 bg-[#00444F] hover:bg-[#003a44] text-base" disabled={isLoading || !signIn}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Send Reset Code
                 </Button>
