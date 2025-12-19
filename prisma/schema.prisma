@@ -79,3 +79,50 @@ model StockLedger {
   userId          String
   createdAt       DateTime @default(now())
 }
+
+model Party {
+  id              String        @id @default(uuid())
+  name            String
+  type            String        // SUPPLIER, CUSTOMER, BOTH
+  phone           String
+  email           String?
+  address         String
+  openingBalance  Float         @default(0)
+  currentBalance  Float         @default(0)
+  status          String        @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  ledgers         PartyLedger[]
+  payments        Payment[]
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  partyId   String
+  party     Party         @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  amount    Float
+  method    String        // CASH, BANK, MOBILE_MONEY
+  type      String        // PAYMENT_MADE, PAYMENT_RECEIVED, ADVANCE
+  reference String?
+  date      DateTime
+  note      String?
+  createdAt DateTime      @default(now())
+  
+  ledgers   PartyLedger[]
+}
+
+model PartyLedger {
+  id             String    @id @default(uuid())
+  partyId        String
+  party          Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  paymentId      String?
+  payment        Payment?  @relation(fields: [paymentId], references: [id])
+  transactionId  String?
+  date           DateTime
+  description    String
+  type           String    // DEBIT or CREDIT
+  amount         Float
+  runningBalance Float
+  createdAt      DateTime  @default(now())
+}

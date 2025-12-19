@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { columns } from './components/columns';
 import { DataTable } from './components/data-table';
-import { getWarehouses } from '@/lib/actions/warehouses';
+import { getWarehousesDB } from '@/lib/actions/warehouses-db';
 import {
     Dialog,
     DialogContent,
@@ -19,9 +19,19 @@ import { WarehouseForm } from './components/warehouse-form';
 
 export default function WarehousesPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadWarehouses = async () => {
+        setLoading(true);
+        const result = await getWarehousesDB();
+        if (result.success) {
+            setWarehouses(result.warehouses);
+        }
+        setLoading(false);
+    };
 
     useEffect(() => {
-        setWarehouses(getWarehouses());
+        loadWarehouses();
     }, []);
 
     return (
@@ -44,11 +54,16 @@ export default function WarehousesPage() {
                                 Create a new warehouse location to track your inventory.
                             </DialogDescription>
                         </DialogHeader>
-                        <WarehouseForm onSuccess={() => setWarehouses(getWarehouses())} />
+                        <WarehouseForm onSuccess={loadWarehouses} />
                     </DialogContent>
                 </Dialog>
             </PageHeader>
-            <DataTable columns={columns} data={warehouses} searchPlaceholder="Filter warehouses..." />
+
+            {loading ? (
+                <div className="p-8 text-center text-muted-foreground">Loading warehouses...</div>
+            ) : (
+                <DataTable columns={columns} data={warehouses} searchPlaceholder="Filter warehouses..." />
+            )}
         </div>
     );
 }

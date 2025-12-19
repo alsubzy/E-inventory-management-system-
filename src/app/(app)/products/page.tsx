@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { columns } from './components/columns';
 import { DataTable } from './components/data-table';
-import { getProducts } from '@/lib/actions/products';
+import { getProductsDB } from '@/lib/actions/products-db';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,19 @@ import { ProductForm } from './components/product-form';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadProducts = async () => {
+    setLoading(true);
+    const result = await getProductsDB();
+    if (result.success) {
+      setProducts(result.products);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    setProducts(getProducts());
+    loadProducts();
   }, []);
 
   return (
@@ -44,12 +54,16 @@ export default function ProductsPage() {
                 Fill in the details below to create a new product in your inventory.
               </DialogDescription>
             </DialogHeader>
-            <ProductForm onSuccess={() => setProducts(getProducts())} />
+            <ProductForm onSuccess={loadProducts} />
           </DialogContent>
         </Dialog>
       </PageHeader>
-      <DataTable columns={columns} data={products} searchPlaceholder="Filter products..." />
+
+      {loading ? (
+        <div className="p-8 text-center text-muted-foreground">Loading products...</div>
+      ) : (
+        <DataTable columns={columns} data={products} searchPlaceholder="Filter products..." />
+      )}
     </div>
   );
 }
-

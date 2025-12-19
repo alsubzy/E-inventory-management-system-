@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, ProductFormValues } from '@/lib/schemas';
@@ -21,7 +21,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { createProduct, updateProduct } from '@/lib/actions/products';
+import { createProductDB, updateProductDB } from '@/lib/actions/products-db';
+import { getCategoriesDB } from '@/lib/actions/categories-db';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -32,6 +33,17 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        async function loadCategories() {
+            const result = await getCategoriesDB();
+            if (result.success) {
+                setCategories(result.categories);
+            }
+        }
+        loadCategories();
+    }, []);
 
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema),
@@ -52,15 +64,36 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
     async function onSubmit(data: ProductFormValues) {
         setLoading(true);
         try {
+            const productData = {
+                name: data.name,
+                sku: data.sku,
+                barcode: data.barcode,
+                unit: data.unit,
+                costPrice: Number(data.costPrice),
+                sellingPrice: Number(data.sellingPrice),
+                description: data.description,
+                reorderLevel: Number(data.minStock || 0),
+                categoryId: data.category || undefined,
+            };
+
+            let result;
             if (initialData) {
-                updateProduct(initialData.id, data);
-                toast({ title: 'Product updated successfully' });
+                result = await updateProductDB(initialData.id, productData);
             } else {
-                createProduct(data);
-                toast({ title: 'Product created successfully' });
+                result = await createProductDB({ ...productData, sku: data.sku });
             }
-            form.reset();
-            onSuccess?.();
+
+            if (result.success) {
+                toast({ title: initialData ? 'Product updated successfully' : 'Product created successfully' });
+                form.reset();
+                onSuccess?.();
+            } else {
+                toast({
+                    title: 'Error',
+                    description: result.error || 'Something went wrong',
+                    variant: 'destructive',
+                });
+            }
         } catch (error) {
             console.error(error);
             toast({
@@ -115,10 +148,11 @@ export function ProductForm({ initialData, onSuccess }: ProductFormProps) {
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    <SelectItem value="Electronics">Electronics</SelectItem>
-                                    <SelectItem value="Furniture">Furniture</SelectItem>
-                                    <SelectItem value="Clothing">Clothing</SelectItem>
-                                    <SelectItem value="Food">Food</SelectItem>
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
