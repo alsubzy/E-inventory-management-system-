@@ -14,6 +14,8 @@ import { MoreHorizontal, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
+import { deleteProduct } from '@/lib/actions/products';
+import { toast } from '@/hooks/use-toast';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-US', {
@@ -51,14 +53,19 @@ export const columns: ColumnDef<Product>[] = [
       const product = row.original;
       return (
         <div className="flex items-center gap-4">
-          <Image
-            src={product.image}
-            alt={product.name}
-            width={40}
-            height={40}
-            className="rounded-md object-cover"
-            data-ai-hint="product image"
-          />
+          {product.image ? (
+            <Image
+              src={product.image}
+              alt={product.name}
+              width={40}
+              height={40}
+              className="rounded-md object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground uppercase">
+              {product.name.substring(0, 2)}
+            </div>
+          )}
           <div className="font-medium">{product.name}</div>
         </div>
       );
@@ -72,32 +79,7 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: 'category',
     header: 'Category',
     cell: ({ row }) => {
-        return <Badge variant="secondary">{row.getValue('category')}</Badge>
-    }
-  },
-  {
-    accessorKey: 'quantity',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Quantity
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const product = row.original;
-      const isLowStock = product.quantity < product.lowStockThreshold;
-      return (
-        <div className="text-center">
-            <span className={isLowStock ? "text-destructive font-bold" : ""}>
-                {product.quantity}
-            </span>
-        </div>
-      );
+      return <Badge variant="secondary">{row.getValue('category')}</Badge>;
     },
   },
   {
@@ -115,13 +97,23 @@ export const columns: ColumnDef<Product>[] = [
     ),
     cell: ({ row }) => {
       const amount = parseFloat(row.getValue('sellingPrice'));
-      return <div className="text-right font-medium">{formatCurrency(amount)}</div>;
+      return (
+        <div className="text-right font-medium">{formatCurrency(amount)}</div>
+      );
     },
   },
   {
     id: 'actions',
     cell: ({ row }) => {
       const product = row.original;
+
+      const onDelete = async () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+          await deleteProduct(product.id);
+          toast({ title: 'Product deleted' });
+        }
+      };
+
       return (
         <div className="text-right">
           <DropdownMenu>
@@ -139,7 +131,12 @@ export const columns: ColumnDef<Product>[] = [
                 Copy product ID
               </DropdownMenuItem>
               <DropdownMenuItem>Edit Product</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">Delete Product</DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                onClick={onDelete}
+              >
+                Delete Product
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -147,3 +144,4 @@ export const columns: ColumnDef<Product>[] = [
     },
   },
 ];
+

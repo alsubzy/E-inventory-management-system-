@@ -5,28 +5,33 @@ import { type User } from '@/lib/types';
 import { Input } from '../ui/input';
 import { Bell, Search } from 'lucide-react';
 import { Button } from '../ui/button';
+import { ThemeToggle } from './theme-toggle';
 
-interface HeaderProps {
-  user: User;
-}
-
-export function Header({ user }: HeaderProps) {
+export function Header() {
   return (
-    <header className="sticky top-0 z-10 flex h-20 items-center gap-4 border-b bg-background px-4 md:px-8">
+    <header className="sticky top-0 z-10 flex h-20 items-center justify-between gap-4 bg-[#F8F9FA] px-4 md:px-8 border-none">
       <div className="md:hidden">
         <SidebarTrigger />
       </div>
-       <h1 className="text-2xl font-semibold hidden md:block">Dashboard</h1>
-      <div className="flex w-full items-center justify-end gap-4">
-        <div className="relative w-full max-w-sm hidden md:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input placeholder="Search anything..." className="pl-10 h-12 rounded-full bg-card border-none shadow-sm" />
+
+      <div className="flex-1 max-w-xl mx-auto hidden md:block">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <Input
+            placeholder="Search inventory, orders, suppliers..."
+            className="pl-11 h-11 w-full rounded-xl bg-white border-none shadow-sm text-sm focus-visible:ring-primary/20"
+          />
         </div>
-        <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 bg-card border-none shadow-sm">
-            <Bell className="h-6 w-6" />
-            <span className="absolute top-3 right-3 block h-2 w-2 rounded-full bg-red-500"></span>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        <Button variant="ghost" size="icon" className="relative rounded-xl h-10 w-10 hover:bg-white hover:shadow-sm transition-all">
+          <Bell className="h-5 w-5 text-slate-600" />
+          <span className="absolute top-2.5 right-2.5 block h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
         </Button>
-        <UserNav user={user} />
+        <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
+        <UserNav />
       </div>
     </header>
   );

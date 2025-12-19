@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/page-header';
 import {
   Card,
@@ -8,118 +9,103 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { salesByDay } from '@/lib/data';
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(value);
+import { TrendingUp, DollarSign } from 'lucide-react';
+import { getDashboardStats } from '@/lib/actions/analytics';
+import { ExportButtons } from './components/export-buttons';
 
 export default function ReportsPage() {
-  const totalRevenue = 54230;
-  const totalCost = 32500;
-  const netProfit = totalRevenue - totalCost;
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    setStats(getDashboardStats());
+  }, []);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
+
+  if (!stats) return <div className="p-8 text-center text-muted-foreground">Loading report data...</div>;
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Reports"
         description="Analyze your sales, profit, and loss."
-      />
+      >
+        <ExportButtons />
+      </PageHeader>
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(totalRevenue)}
+              {formatCurrency(stats.totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              Total sales revenue to date
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Costs</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Current Stock Value</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(totalCost)}
+              {formatCurrency(stats.totalStockValue)}
             </div>
             <p className="text-xs text-muted-foreground">
-              +18.3% from last month
+              Value of inventory at cost price
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Gross Profit (Est.)</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(netProfit)}
+              {formatCurrency(stats.totalRevenue * 0.4)}
             </div>
             <p className="text-xs text-muted-foreground">
-              +22.4% from last month
+              Estimated 40% margin
             </p>
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Sales Summary</CardTitle>
-          <CardDescription>
-            A chart showing sales performance over the last 30 days.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pl-2">
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={salesByDay}>
-              <XAxis
-                dataKey="date"
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#888888"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `$${value / 1000}k`}
-              />
-              <Tooltip
-                cursor={{ fill: 'hsl(var(--muted))' }}
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                }}
-              />
-              <Bar
-                dataKey="sales"
-                fill="hsl(var(--primary))"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory Valuation</CardTitle>
+            <CardDescription>Detailed breakdown of stock value by item.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Download a full CSV report of your current inventory including cost and selling prices.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sales History</CardTitle>
+            <CardDescription>Comprehensive log of all outgoing transactions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Export all sales transactions with itemized details and customer information.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
+

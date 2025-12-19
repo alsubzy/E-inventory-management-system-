@@ -7,35 +7,40 @@ import { EInventoryLogo } from '@/components/e-inventory-logo';
 import { redirect } from 'next/navigation';
 import { mockUser } from '@/lib/data';
 
+import { auth } from '@clerk/nextjs/server';
+
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const appUser = mockUser;
+  const session = await auth();
+
+  if (!session.userId) {
+    redirect('/login');
+  }
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-             <div className="flex items-center gap-2">
-                <EInventoryLogo className="h-8 w-8" />
-                <span className="text-xl font-semibold">E-inventory Management system</span>
-             </div>
-             <Button variant="ghost" size="icon" className="h-8 w-8">
-                <PanelLeftClose />
-             </Button>
+      <Sidebar className="border-r border-sidebar-border bg-white">
+        <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+          <div className="flex h-20 items-center px-6 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-primary p-1.5 rounded-lg">
+                <EInventoryLogo className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-primary">FoodFlow</span>
+            </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto px-4">
             <MainNav />
           </div>
         </div>
       </Sidebar>
-      <div className="flex flex-1 flex-col">
-        <Header user={appUser} />
-        <main className="flex-1 overflow-y-auto bg-background p-4 md:p-8">
-            <SidebarInset>{children}</SidebarInset>
+      <div className="flex flex-1 flex-col bg-[#F3F4F6]">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+          <SidebarInset className="bg-transparent border-none shadow-none">{children}</SidebarInset>
         </main>
       </div>
     </SidebarProvider>

@@ -8,7 +8,7 @@ export function EInventoryLogo({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <g fill="none" fillRule="evenodd">
-        <circle fill="#212121" cx="20" cy="20" r="20"></circle>
+        <circle fill="currentColor" cx="20" cy="20" r="20"></circle>
         <path
           d="M20 27a7 7 0 100-14 7 7 0 000 14z"
           stroke="#FFF"
