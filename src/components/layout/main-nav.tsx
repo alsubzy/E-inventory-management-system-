@@ -77,8 +77,8 @@ const mainMenuItems: MenuItem[] = [
   { href: '/sales', label: 'Sales', icon: ShoppingBag },
   { href: '/pos', label: 'POS', icon: Monitor },
   { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
-  { href: '/stock-transfer', label: 'Stock Transfer', icon: ArrowRightLeft },
-  { href: '/cash-bank', label: 'Cash & Bank', icon: Landmark },
+  { href: '/stock-transfers', label: 'Stock Transfer', icon: ArrowRightLeft },
+  { href: '/accounts', label: 'Cash & Bank', icon: Landmark },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   {
     label: 'Reports',
