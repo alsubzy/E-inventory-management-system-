@@ -20,6 +20,7 @@ import { WarehouseForm } from './components/warehouse-form';
 export default function WarehousesPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [open, setOpen] = useState(false);
 
     const loadWarehouses = async () => {
         setLoading(true);
@@ -40,7 +41,7 @@ export default function WarehousesPage() {
                 title="Warehouses"
                 description="Manage your storage locations and branches."
             >
-                <Dialog>
+                <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
@@ -54,7 +55,12 @@ export default function WarehousesPage() {
                                 Create a new warehouse location to track your inventory.
                             </DialogDescription>
                         </DialogHeader>
-                        <WarehouseForm onSuccess={loadWarehouses} />
+                        <WarehouseForm
+                            onSuccess={() => {
+                                loadWarehouses();
+                                setOpen(false);
+                            }}
+                        />
                     </DialogContent>
                 </Dialog>
             </PageHeader>

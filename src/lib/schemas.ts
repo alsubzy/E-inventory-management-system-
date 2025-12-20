@@ -18,7 +18,7 @@ export const productSchema = z.object({
 export const warehouseSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     location: z.string().min(2, "Location must be at least 2 characters"),
-    contact: z.string().min(5, "Contact details required"),
+    contact: z.string().optional(),
 });
 
 export const transactionSchema = z.object({

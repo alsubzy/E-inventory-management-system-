@@ -11,7 +11,10 @@ import { getPartiesDB } from '@/lib/actions/parties-db';
 import { getWarehousesDB } from '@/lib/actions/warehouses-db';
 import { getAccountsDB } from '@/lib/actions/accounts-db';
 import { createSaleDB } from '@/lib/actions/sales-db';
+import { getSettingsDB } from '@/lib/actions/settings-db';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/nextjs';
+import { UserRole } from '@/lib/auth';
 import {
     Select,
     SelectContent,
@@ -43,6 +46,10 @@ export default function POSPage() {
     const [barcodeMode, setBarcodeMode] = useState(true);
     const [recentSale, setRecentSale] = useState<any>(null);
     const [receiptOpen, setReceiptOpen] = useState(false);
+    const [taxRate, setTaxRate] = useState<number>(0);
+
+    const { user } = useUser();
+    const userRole = (user?.publicMetadata?.role as UserRole) || 'STAFF';
 
     // Split Payment State
     const [splitPayments, setSplitPayments] = useState<{ accountId: string; amount: number; method: string }[]>([
@@ -58,13 +65,20 @@ export default function POSPage() {
 
     useEffect(() => {
         const loadInitialData = async () => {
-            const [custRes, whRes, accRes, catRes] = await Promise.all([
+            const [custRes, whRes, accRes, catRes, setRes] = await Promise.all([
                 getPartiesDB(),
                 getWarehousesDB(),
                 getAccountsDB(),
-                import('@/lib/actions/categories-db').then(m => m.getCategoriesDB())
+                import('@/lib/actions/categories-db').then(m => m.getCategoriesDB()),
+                getSettingsDB()
             ]);
-            if (custRes.success) setCustomers(custRes.parties.filter((p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH'));
+            if (custRes.success) {
+                const customerList = custRes.parties.filter((p: any) => p.type === 'CUSTOMER' || p.type === 'BOTH');
+                setCustomers(customerList);
+            }
+            if (setRes.success && setRes.apiData) {
+                setTaxRate(setRes.apiData.taxRate || 0);
+            }
             if (whRes.success) {
                 setWarehouses(whRes.warehouses);
                 if (whRes.warehouses.length > 0) {
@@ -74,7 +88,6 @@ export default function POSPage() {
             }
             if (accRes.success && accRes.apiData) {
                 setAccounts(accRes.apiData);
-                // Set default account for first payment line
                 if (accRes.apiData.length > 0) {
                     setSplitPayments([{ accountId: accRes.apiData[0].id, amount: 0, method: 'CASH' }]);
                 }
@@ -131,7 +144,8 @@ export default function POSPage() {
     };
 
     const subtotal = cart.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
-    const netAmount = Math.max(0, subtotal - discountAmount);
+    const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
+    const netAmount = Math.max(0, subtotal - discountAmount + taxAmount);
 
     const handleCheckout = async () => {
         if (!selectedCustomer) {
@@ -155,7 +169,7 @@ export default function POSPage() {
             warehouseId: selectedWarehouse,
             totalAmount: subtotal,
             discountAmount: discountAmount,
-            taxAmount: 0,
+            taxAmount: taxAmount,
             netAmount: netAmount,
             paidAmount: totalPaid,
             payments: splitPayments.filter(p => p.amount > 0),
@@ -164,8 +178,8 @@ export default function POSPage() {
                 quantity: item.quantity,
                 unitPrice: item.sellingPrice,
                 discountAmount: 0,
-                taxAmount: 0,
-                totalAmount: item.sellingPrice * item.quantity
+                taxAmount: (item.sellingPrice * item.quantity / subtotal) * taxAmount, // Proportional tax
+                totalAmount: (item.sellingPrice * item.quantity)
             }))
         };
 
@@ -331,6 +345,7 @@ export default function POSPage() {
                                     <SelectValue placeholder="Select Customer" />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="GUEST" className="font-bold text-primary">Walk-in Customer</SelectItem>
                                     {customers.map(c => (
                                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                     ))}
@@ -424,6 +439,10 @@ export default function POSPage() {
                                         value={discountAmount}
                                         onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
                                     />
+                                </div>
+                                <div className="flex justify-between text-xs text-muted-foreground items-center">
+                                    <span>Tax ({taxRate}%)</span>
+                                    <span>${taxAmount.toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between font-black text-2xl pt-2">
                                     <span>Total Due</span>

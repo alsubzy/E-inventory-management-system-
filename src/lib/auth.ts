@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'MANAGER' | 'STAFF';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'STAFF' | 'CASHIER';
 
 /**
  * Client-side version of role checking

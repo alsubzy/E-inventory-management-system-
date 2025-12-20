@@ -1,9 +1,11 @@
 "use server"
+// Forced recompilation to pick up Prisma changes
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
 import { SalesStatus, PaymentStatus } from "@/lib/types"
+import { hasRole } from "@/lib/auth-server"
 
 // 1. Create Sale (Enhanced with Split Payments)
 export async function createSaleDB(data: {
@@ -33,6 +35,9 @@ export async function createSaleDB(data: {
     }[]
 }) {
     try {
+        if (!(await hasRole(['ADMIN', 'MANAGER', 'CASHIER', 'STAFF']))) {
+            return { success: false, error: 'Access Denied: Your role does not have permission to create sales' }
+        }
         const { userId } = await auth()
         if (!userId) return { success: false, error: 'Unauthorized' }
 
@@ -46,6 +51,27 @@ export async function createSaleDB(data: {
         const totalPaid = paymentList.reduce((sum, p) => sum + p.amount, 0)
 
         const result = await prisma.$transaction(async (tx) => {
+            let actualCustomerId = data.customerId
+
+            // Handle Walk-in / Guest Customer
+            if (data.customerId === 'GUEST') {
+                let guest = await tx.party.findFirst({
+                    where: { name: 'Walk-in Customer', type: 'CUSTOMER' }
+                })
+                if (!guest) {
+                    guest = await tx.party.create({
+                        data: {
+                            name: 'Walk-in Customer',
+                            type: 'CUSTOMER',
+                            phone: '0000000000',
+                            address: 'N/A',
+                            status: 'ACTIVE'
+                        }
+                    })
+                }
+                actualCustomerId = guest.id
+            }
+
             // 1. Validate stock
             for (const item of data.items) {
                 const stock = await tx.stockLedger.aggregate({
@@ -63,15 +89,23 @@ export async function createSaleDB(data: {
             if (totalPaid >= data.netAmount) paymentStatus = 'PAID'
             else if (totalPaid > 0) paymentStatus = 'PARTIAL'
 
+            // Fetch current cost prices for COGS tracking
+            const productIds = data.items.map(i => i.productId)
+            const products = await tx.product.findMany({
+                where: { id: { in: productIds } },
+                select: { id: true, costPrice: true }
+            })
+
             // 2. Create Sale
             const sale = await tx.sale.create({
                 data: {
                     saleNumber,
-                    customerId: data.customerId,
+                    customerId: actualCustomerId,
                     warehouseId: data.warehouseId,
                     totalAmount: data.totalAmount,
                     discountAmount: data.discountAmount,
                     taxAmount: data.taxAmount,
+                    taxRate: (data.taxAmount / (data.totalAmount - data.discountAmount)) * 100 || 0, // Approx if not passed
                     netAmount: data.netAmount,
                     paidAmount: totalPaid,
                     balanceAmount: data.netAmount - totalPaid,
@@ -80,15 +114,19 @@ export async function createSaleDB(data: {
                     userId,
                     notes: data.notes,
                     items: {
-                        create: data.items.map(item => ({
-                            productId: item.productId,
-                            variantId: item.variantId || null,
-                            quantity: item.quantity,
-                            unitPrice: item.unitPrice,
-                            discountAmount: item.discountAmount,
-                            taxAmount: item.taxAmount,
-                            totalAmount: item.totalAmount
-                        }))
+                        create: data.items.map(item => {
+                            const p = products.find(prod => prod.id === item.productId)
+                            return {
+                                productId: item.productId,
+                                variantId: item.variantId || null,
+                                quantity: item.quantity,
+                                unitPrice: item.unitPrice,
+                                costPrice: p?.costPrice || 0,
+                                discountAmount: item.discountAmount,
+                                taxAmount: item.taxAmount,
+                                totalAmount: item.totalAmount
+                            }
+                        })
                     }
                 }
             })
@@ -108,13 +146,24 @@ export async function createSaleDB(data: {
                 })
             }
 
-            // 4. Accounting (Split Payments & Customer Balance)
-            const party = await tx.party.findUnique({ where: { id: data.customerId } })
+            // 4. Audit Log
+            await tx.auditLog.create({
+                data: {
+                    userId,
+                    action: 'CREATE_SALE',
+                    entityType: 'SALE',
+                    entityId: sale.id,
+                    details: `Created sale #${saleNumber} for customer ${actualCustomerId}. Total: ${data.netAmount}`
+                }
+            })
+
+            // 5. Accounting (Split Payments & Customer Balance)
+            const party = await tx.party.findUnique({ where: { id: actualCustomerId } })
             if (party) {
                 // Sale Ledger Entry
                 await tx.partyLedger.create({
                     data: {
-                        partyId: data.customerId,
+                        partyId: actualCustomerId,
                         transactionId: sale.id,
                         date: new Date(),
                         description: `Sale #${saleNumber}`,
@@ -130,7 +179,7 @@ export async function createSaleDB(data: {
 
                     await tx.payment.create({
                         data: {
-                            partyId: data.customerId,
+                            partyId: actualCustomerId,
                             amount: p.amount,
                             method: p.method,
                             type: 'PAYMENT_RECEIVED',
@@ -148,7 +197,7 @@ export async function createSaleDB(data: {
 
                     await tx.partyLedger.create({
                         data: {
-                            partyId: data.customerId,
+                            partyId: actualCustomerId,
                             transactionId: sale.id,
                             date: new Date(),
                             description: `Payment per Sale #${saleNumber} (${p.method})`,
@@ -160,7 +209,7 @@ export async function createSaleDB(data: {
                 }
 
                 await tx.party.update({
-                    where: { id: data.customerId },
+                    where: { id: actualCustomerId },
                     data: { currentBalance: { increment: data.netAmount - totalPaid } }
                 })
             }
@@ -357,6 +406,9 @@ export async function getSaleByIdDB(id: string) {
 
 export async function cancelSaleDB(id: string) {
     try {
+        if (!(await hasRole(['ADMIN', 'MANAGER']))) {
+            return { success: false, error: 'Access Denied: Only Managers and Admins can cancel sales' }
+        }
         const { userId } = await auth()
         if (!userId) return { success: false, error: 'Unauthorized' }
 
@@ -373,6 +425,17 @@ export async function cancelSaleDB(id: string) {
             await tx.sale.update({
                 where: { id },
                 data: { status: 'CANCELLED' }
+            })
+
+            // Audit Log
+            await tx.auditLog.create({
+                data: {
+                    userId,
+                    action: 'CANCEL_SALE',
+                    entityType: 'SALE',
+                    entityId: id,
+                    details: `Cancelled sale #${sale.saleNumber}`
+                }
             })
 
             // 2. Revert Stock
@@ -452,6 +515,9 @@ export async function cancelSaleDB(id: string) {
 
 export async function updateSalePaymentDB(saleId: string, amount: number, accountId?: string) {
     try {
+        if (!(await hasRole(['ADMIN', 'MANAGER', 'CASHIER', 'STAFF']))) {
+            return { success: false, error: 'Access Denied: Your role does not have permission to update payments' }
+        }
         const { userId } = await auth()
         if (!userId) return { success: false, error: 'Unauthorized' }
 
@@ -574,6 +640,9 @@ export async function getSalesReportDB(filters: {
     userId?: string
 }) {
     try {
+        if (!(await hasRole(['ADMIN', 'MANAGER', 'STAFF']))) {
+            return { success: false, error: 'Access Denied: Insufficient permissions to view sales reports' }
+        }
         const where: any = {
             status: 'COMPLETED',
             createdAt: {
@@ -597,15 +666,22 @@ export async function getSalesReportDB(filters: {
         const sales = await prisma.sale.findMany({
             where,
             include: {
-                items: true
+                items: {
+                    select: {
+                        quantity: true,
+                        unitPrice: true,
+                        costPrice: true,
+                        totalAmount: true
+                    }
+                }
             }
         })
 
         const totalRevenue = sales.reduce((sum, sale) => sum + sale.netAmount, 0)
-        const totalProfit = 0 // Need costPrice in SaleItem or join Product to calculate
-
-        // In a real scenario, we'd join Product to get costPrice
-        // For now, let's just return revenue
+        const totalCOGS = sales.reduce((sum, sale) => {
+            return sum + sale.items.reduce((isum, item) => isum + (item.quantity * item.costPrice), 0)
+        }, 0)
+        const totalProfit = totalRevenue - totalCOGS
 
         return {
             success: true,

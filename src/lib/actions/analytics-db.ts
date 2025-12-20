@@ -55,9 +55,9 @@ export async function getDashboardStatsDB() {
 
         const totalRevenue = sales.reduce((sum, s) => sum + s.netAmount, 0)
 
-        // COGS (Approximate based on current cost price)
+        // COGS (Accurate Profit based on costPrice at time of sale)
         const totalCOGS = sales.reduce((sum, sale) => {
-            return sum + sale.items.reduce((isum, item) => isum + (item.quantity * (item.product?.costPrice || 0)), 0)
+            return sum + sale.items.reduce((isum, item) => isum + (item.quantity * item.costPrice), 0)
         }, 0)
 
         const grossProfit = totalRevenue - totalCOGS
@@ -87,7 +87,7 @@ export async function getDashboardStatsDB() {
                 const entry = chartMap.get(dateStr)!
                 entry.sales += sale.netAmount
                 // Calculate profit for this sale
-                const saleCOGS = sale.items.reduce((sum, item) => sum + (item.quantity * (item.product?.costPrice || 0)), 0)
+                const saleCOGS = sale.items.reduce((sum, item) => sum + (item.quantity * item.costPrice), 0)
                 entry.profit += (sale.netAmount - saleCOGS)
             }
         })

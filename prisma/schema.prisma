@@ -12,285 +12,295 @@ model Category {
   name        String
   description String?
   parentId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   parent      Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryToCategory")
   products    Product[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
 }
 
 model Product {
-  id            String        @id @default(uuid())
-  name          String
-  description   String?
-  sku           String        @unique
-  barcode       String?
-  unit          String // pcs, kg, etc.
-  costPrice     Float
-  sellingPrice  Float
-  taxRate       Float?        @default(0)
-  reorderLevel  Int           @default(0)
-  status        String        @default("ACTIVE") // ACTIVE, INACTIVE
-  categoryId    String?
-  category      Category?     @relation(fields: [categoryId], references: [id])
-  supplierId    String? // Link to Supplier
-  variants      Variant[]
-  ledgerEntries StockLedger[]
-  saleItems     SaleItem[]
-  purchaseItems PurchaseItem[]
-  onlineOrderItems OnlineOrderItem[]
+  id                 String              @id @default(uuid())
+  name               String
+  description        String?
+  sku                String              @unique
+  barcode            String?
+  unit               String
+  costPrice          Float
+  sellingPrice       Float
+  taxRate            Float?              @default(0)
+  reorderLevel       Int                 @default(0)
+  status             String              @default("ACTIVE")
+  categoryId         String?
+  supplierId         String?
+  isDeleted          Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  onlineOrderItems   OnlineOrderItem[]
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  purchaseItems      PurchaseItem[]
+  saleItems          SaleItem[]
+  ledgerEntries      StockLedger[]
   stockTransferItems StockTransferItem[]
-  isDeleted     Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  variants           Variant[]
 }
 
 model Variant {
   id            String     @id @default(uuid())
   productId     String
-  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  name          String // e.g., "Size: L", "Color: Blue"
+  name          String
   sku           String     @unique
   barcode       String?
-  costPrice     Float? // Override
-  sellingPrice  Float? // Override
+  costPrice     Float?
+  sellingPrice  Float?
   stockQuantity Int        @default(0)
-  saleItems     SaleItem[]
   isDeleted     Boolean    @default(false)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+  saleItems     SaleItem[]
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Warehouse {
-  id            String        @id @default(uuid())
-  name          String
-  location      String?
-  ledgerEntries StockLedger[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sales         Sale[]
-  purchases     Purchase[]
-  sourceTransfers StockTransfer[] @relation("SourceWarehouse")
+  id              String          @id @default(uuid())
+  name            String
+  location        String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  purchases       Purchase[]
+  sales           Sale[]
+  ledgerEntries   StockLedger[]
   destTransfers   StockTransfer[] @relation("DestWarehouse")
+  sourceTransfers StockTransfer[] @relation("SourceWarehouse")
 }
 
 model StockTransfer {
-  id              String             @id @default(uuid())
-  transferNumber  String             @unique
+  id                String              @id @default(uuid())
+  transferNumber    String              @unique
   sourceWarehouseId String
-  sourceWarehouse Warehouse          @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id])
-  destWarehouseId String
-  destWarehouse   Warehouse          @relation("DestWarehouse", fields: [destWarehouseId], references: [id])
-  date            DateTime           @default(now())
-  status          String             @default("COMPLETED") // COMPLETED, CANCELLED
-  notes           String?
-  items           StockTransferItem[]
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  destWarehouseId   String
+  date              DateTime            @default(now())
+  status            String              @default("COMPLETED")
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  destWarehouse     Warehouse           @relation("DestWarehouse", fields: [destWarehouseId], references: [id])
+  sourceWarehouse   Warehouse           @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id])
+  items             StockTransferItem[]
 }
 
 model StockTransferItem {
-  id              String        @id @default(uuid())
-  transferId      String
-  transfer        StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
-  productId       String
-  product         Product       @relation(fields: [productId], references: [id])
-  quantity        Int
+  id         String        @id @default(uuid())
+  transferId String
+  productId  String
+  quantity   Int
+  product    Product       @relation(fields: [productId], references: [id])
+  transfer   StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
 }
 
 model StockLedger {
   id             String    @id @default(uuid())
   productId      String
-  product        Product   @relation(fields: [productId], references: [id])
   variantId      String?
   warehouseId    String
-  warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
-  quantityChange Int // Positive for IN, negative for OUT
-  type           String // PURCHASE, SALE, RETURN, ADJUSTMENT, TRANSFER
-  referenceId    String? // ID of the order/transaction
+  quantityChange Int
+  type           String
+  referenceId    String?
   note           String?
   userId         String
   createdAt      DateTime  @default(now())
+  product        Product   @relation(fields: [productId], references: [id])
+  warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
 }
 
 model Party {
-  id             String   @id @default(uuid())
+  id             String        @id @default(uuid())
   name           String
-  type           String // SUPPLIER, CUSTOMER, BOTH
+  type           String
   phone          String
   email          String?
   address        String
-  openingBalance Float    @default(0)
-  currentBalance Float    @default(0)
-  status         String   @default("ACTIVE") // ACTIVE, INACTIVE
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  ledgers  PartyLedger[]
-  payments Payment[]
-  sales    Sale[]
-  purchases Purchase[]
+  openingBalance Float         @default(0)
+  currentBalance Float         @default(0)
+  status         String        @default("ACTIVE")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  ledgers        PartyLedger[]
+  payments       Payment[]
+  purchases      Purchase[]
+  sales          Sale[]
 }
 
 model Payment {
-  id        String   @id @default(uuid())
-  partyId   String
-  party     Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
-  amount    Float
-  method    String // CASH, BANK, MOBILE_MONEY
-  type      String // PAYMENT_MADE, PAYMENT_RECEIVED, ADVANCE
-  reference String?
-  date      DateTime
-  note      String?
-  createdAt DateTime @default(now())
-
-  ledgers PartyLedger[]
-  accountId String?
-  account   Account? @relation(fields: [accountId], references: [id])
-  saleId    String?
-  sale      Sale?    @relation(fields: [saleId], references: [id])
+  id         String        @id @default(uuid())
+  partyId    String
+  amount     Float
+  method     String
+  type       String
+  reference  String?
+  date       DateTime
+  note       String?
+  createdAt  DateTime      @default(now())
+  accountId  String?
   purchaseId String?
-  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
+  saleId     String?
+  ledgers    PartyLedger[]
+  account    Account?      @relation(fields: [accountId], references: [id])
+  party      Party         @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  purchase   Purchase?     @relation(fields: [purchaseId], references: [id])
+  sale       Sale?         @relation(fields: [saleId], references: [id])
 }
 
 model PartyLedger {
   id             String   @id @default(uuid())
   partyId        String
-  party          Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
   paymentId      String?
-  payment        Payment? @relation(fields: [paymentId], references: [id])
   transactionId  String?
   date           DateTime
   description    String
-  type           String // DEBIT or CREDIT
+  type           String
   amount         Float
   runningBalance Float
   createdAt      DateTime @default(now())
+  party          Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  payment        Payment? @relation(fields: [paymentId], references: [id])
 }
 
 model Sale {
   id             String     @id @default(uuid())
   saleNumber     String     @unique
   customerId     String
-  customer       Party      @relation(fields: [customerId], references: [id])
   warehouseId    String
-  warehouse      Warehouse  @relation(fields: [warehouseId], references: [id])
-  totalAmount    Float // Gross total
+  totalAmount    Float
   discountAmount Float      @default(0)
   taxAmount      Float      @default(0)
-  netAmount      Float // Final total
+  netAmount      Float
   paidAmount     Float      @default(0)
   balanceAmount  Float      @default(0)
-  paymentStatus  String // PAID, PARTIAL, UNPAID
-  status         String     @default("COMPLETED") // COMPLETED, CANCELLED, RETURNED
+  paymentStatus  String
+  status         String     @default("COMPLETED")
   userId         String
   notes          String?
-  items          SaleItem[]
-  invoice        Invoice?
-  payments       Payment[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+  taxRate        Float      @default(0)
+  invoice        Invoice?
+  payments       Payment[]
+  customer       Party      @relation(fields: [customerId], references: [id])
+  warehouse      Warehouse  @relation(fields: [warehouseId], references: [id])
+  items          SaleItem[]
 }
 
 model SaleItem {
-  id             String   @id @default(uuid())
-  saleId         String
-  sale           Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  productId      String
-  product        Product  @relation(fields: [productId], references: [id])
-  variantId      String?
-  variant        Variant? @relation(fields: [variantId], references: [id])
-  quantity       Int
-  returnedQuantity Int    @default(0)
-  unitPrice      Float
-  discountAmount Float    @default(0)
-  taxAmount      Float    @default(0)
-  totalAmount    Float // quantity * unitPrice - discount + tax
+  id               String   @id @default(uuid())
+  saleId           String
+  productId        String
+  variantId        String?
+  quantity         Int
+  unitPrice        Float
+  discountAmount   Float    @default(0)
+  taxAmount        Float    @default(0)
+  totalAmount      Float
+  costPrice        Float    @default(0)
+  returnedQuantity Int      @default(0)
+  product          Product  @relation(fields: [productId], references: [id])
+  sale             Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  variant          Variant? @relation(fields: [variantId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  details    String?
+  createdAt  DateTime @default(now())
 }
 
 model Invoice {
   id            String   @id @default(uuid())
   saleId        String   @unique
-  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   invoiceNumber String   @unique
   invoiceDate   DateTime @default(now())
   totalAmount   Float
   pdfUrl        String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
 }
 
 model Purchase {
   id             String         @id @default(uuid())
   purchaseNumber String         @unique
   supplierId     String
-  supplier       Party          @relation(fields: [supplierId], references: [id])
   warehouseId    String
-  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
   totalAmount    Float
   taxAmount      Float          @default(0)
   netAmount      Float
   paidAmount     Float          @default(0)
   balanceAmount  Float          @default(0)
-  status         String         @default("COMPLETED") // PENDING, RECEIVED, COMPLETED
+  status         String         @default("COMPLETED")
   paymentStatus  String         @default("UNPAID")
   date           DateTime       @default(now())
   notes          String?
-  items          PurchaseItem[]
-  payments       Payment[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  payments       Payment[]
+  supplier       Party          @relation(fields: [supplierId], references: [id])
+  warehouse      Warehouse      @relation(fields: [warehouseId], references: [id])
+  items          PurchaseItem[]
 }
 
 model PurchaseItem {
   id         String   @id @default(uuid())
   purchaseId String
-  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   productId  String
-  product    Product  @relation(fields: [productId], references: [id])
   quantity   Int
   unitCost   Float
   totalCost  Float
+  product    Product  @relation(fields: [productId], references: [id])
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
 }
 
 model ExpenseCategory {
   id          String    @id @default(uuid())
   name        String
   description String?
-  expenses    Expense[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  expenses    Expense[]
 }
 
 model Expense {
-  id           String          @id @default(uuid())
-  categoryId   String
-  category     ExpenseCategory @relation(fields: [categoryId], references: [id])
-  amount       Float
-  date         DateTime        @default(now())
-  description  String?
-  reference    String?
-  paidBy       String? // User who paid
-  paymentMethod String? // CASH, BANK
-  accountId    String?
-  account      Account?        @relation(fields: [accountId], references: [id])
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id            String          @id @default(uuid())
+  categoryId    String
+  amount        Float
+  date          DateTime        @default(now())
+  description   String?
+  reference     String?
+  paidBy        String?
+  paymentMethod String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  accountId     String?
+  account       Account?        @relation(fields: [accountId], references: [id])
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id])
 }
 
 model Account {
   id            String    @id @default(uuid())
   name          String
-  type          String    // CASH, BANK, MOBILE_MONEY
+  type          String
   accountNumber String?
   balance       Float     @default(0)
   currency      String    @default("USD")
   description   String?
   isDefault     Boolean   @default(false)
-  expenses      Expense[]
-  payments      Payment[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  expenses      Expense[]
+  payments      Payment[]
 }
 
 model OnlineOrder {
@@ -301,45 +311,45 @@ model OnlineOrder {
   customerPhone   String
   shippingAddress String
   totalAmount     Float
-  status          String            @default("PENDING") // PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
-  items           OnlineOrderItem[]
+  status          String            @default("PENDING")
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  items           OnlineOrderItem[]
 }
 
 model OnlineOrderItem {
   id            String      @id @default(uuid())
   onlineOrderId String
-  onlineOrder   OnlineOrder @relation(fields: [onlineOrderId], references: [id], onDelete: Cascade)
   productId     String
-  product       Product     @relation(fields: [productId], references: [id])
   quantity      Int
   unitPrice     Float
   totalPrice    Float
+  onlineOrder   OnlineOrder @relation(fields: [onlineOrderId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id])
 }
 
 model SubscriptionPlan {
-  id          String   @id @default(uuid())
-  name        String // Basic, Pro, Enterprise
-  price       Float
-  duration    Int // Days
-  features    String // JSON or comma-separated
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isActive    Boolean  @default(true)
-  settings    Settings[]
+  id        String     @id @default(uuid())
+  name      String
+  price     Float
+  duration  Int
+  features  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  isActive  Boolean    @default(true)
+  settings  Settings[]
 }
 
 model Settings {
-  id           String   @id @default(uuid())
-  businessName String
-  address      String?
-  phone        String?
-  email        String?
-  currency     String   @default("USD")
-  taxRate      Float    @default(0)
+  id                 String            @id @default(uuid())
+  businessName       String
+  address            String?
+  phone              String?
+  email              String?
+  currency           String            @default("USD")
+  taxRate            Float             @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   subscriptionPlanId String?
-  subscriptionPlan SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id])
 }

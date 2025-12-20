@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
+import { hasRole } from "@/lib/auth-server"
 
 // Product CRUD Operations
 
@@ -21,6 +22,9 @@ export async function createProductDB(data: {
     supplierId?: string
 }) {
     try {
+        if (!(await hasRole(['ADMIN', 'MANAGER', 'STAFF']))) {
+            return { success: false, error: 'Access Denied: You do not have permission to create products' }
+        }
         const { userId } = await auth()
 
         // Check if SKU already exists
@@ -166,6 +170,9 @@ export async function updateProductDB(id: string, data: Partial<{
     supplierId: string
 }>) {
     try {
+        if (!(await hasRole(['ADMIN', 'MANAGER', 'STAFF']))) {
+            return { success: false, error: 'Access Denied: You do not have permission to manage prices or update products' }
+        }
         // If updating SKU, check if new SKU already exists
         if (data.sku) {
             const existing = await prisma.product.findFirst({
@@ -204,6 +211,9 @@ export async function updateProductDB(id: string, data: Partial<{
 
 export async function deleteProductDB(id: string) {
     try {
+        if (!(await hasRole(['ADMIN']))) {
+            return { success: false, error: 'Access Denied: Only Admins can delete products' }
+        }
         // Soft delete
         const product = await prisma.product.update({
             where: { id },

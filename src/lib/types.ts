@@ -1,4 +1,4 @@
-export type UserRole = 'Admin' | 'Manager' | 'Staff';
+export type UserRole = 'ADMIN' | 'MANAGER' | 'STAFF' | 'CASHIER';
 
 export interface User {
   id: string;
@@ -119,6 +119,7 @@ export interface Sale {
   totalAmount: number;
   discountAmount: number;
   taxAmount: number;
+  taxRate: number;
   netAmount: number;
   paidAmount: number;
   balanceAmount: number;
@@ -138,9 +139,20 @@ export interface SaleItem {
   variantId?: string;
   quantity: number;
   unitPrice: number;
+  costPrice: number;
   discountAmount: number;
   taxAmount: number;
   totalAmount: number;
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  details?: string;
+  createdAt: string;
 }
 
 export interface Invoice {
@@ -162,11 +174,5 @@ export interface Supplier {
   products: string[]; // Product IDs
 }
 
-export interface AuditLog {
-  id: string;
-  userId: string;
-  action: string;
-  timestamp: string;
-  details: string;
-}
+
 
