@@ -1,10 +1,23 @@
+'use client';
+
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
-const LoginForm = dynamic(() => import('@/components/auth/login-form').then(mod => mod.LoginForm), {
-  ssr: false,
-  loading: () => <div className="h-[400px] flex items-center justify-center font-medium text-muted-foreground">Preparing login...</div>
-});
 import { Card } from '@/components/ui/card';
 import { EInventoryLogo } from '@/components/e-inventory-logo';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+
+const LoginForm = dynamic(
+  () => import('@/components/auth/login-form').then(mod => mod.LoginForm),
+  {
+    loading: () => (
+      <div className="h-[400px] flex items-center justify-center font-medium text-muted-foreground">
+        Preparing login...
+      </div>
+    )
+  }
+);
+
 import {
   Area,
   AreaChart,

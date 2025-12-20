@@ -1,10 +1,19 @@
+'use client';
+
 import dynamic from 'next/dynamic';
-const ForgotPasswordForm = dynamic(() => import('@/components/auth/forgot-password-form').then(mod => mod.ForgotPasswordForm), {
-    ssr: false,
-    loading: () => <div className="h-[200px] flex items-center justify-center font-medium text-muted-foreground">Preparing...</div>
-});
 import { Card } from '@/components/ui/card';
 import { EInventoryLogo } from '@/components/e-inventory-logo';
+
+const ForgotPasswordForm = dynamic(
+  () => import('@/components/auth/forgot-password-form').then(mod => mod.ForgotPasswordForm),
+  {
+    loading: () => (
+      <div className="h-[200px] flex items-center justify-center font-medium text-muted-foreground">
+        Preparing...
+      </div>
+    )
+  }
+);
 
 export default function ForgotPasswordPage() {
     return (
