@@ -34,6 +34,7 @@ import {
   LogOut,
   ChevronRight,
   ChevronDown, // Added for collapsible indicator
+  Warehouse,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -78,6 +79,7 @@ const mainMenuItems: MenuItem[] = [
   { href: '/pos', label: 'POS', icon: Monitor },
   { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/stock-transfers', label: 'Stock Transfer', icon: ArrowRightLeft },
+  { href: '/warehouses', label: 'Warehouses', icon: Warehouse, roles: ['ADMIN', 'MANAGER'] },
   { href: '/accounts', label: 'Cash & Bank', icon: Landmark },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   {
