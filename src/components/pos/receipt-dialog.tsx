@@ -121,6 +121,12 @@ export function ReceiptDialog({ open, onOpenChange, sale }: ReceiptDialogProps) 
                                     <span>-${sale.discountAmount.toFixed(2)}</span>
                                 </div>
                             )}
+                            {sale.taxAmount > 0 && (
+                                <div className="flex justify-between">
+                                    <span>Tax ({sale.taxRate?.toFixed(1) || '0'}%)</span>
+                                    <span>${sale.taxAmount.toFixed(2)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between font-bold text-lg pt-1">
                                 <span>Total</span>
                                 <span>${sale.netAmount.toFixed(2)}</span>

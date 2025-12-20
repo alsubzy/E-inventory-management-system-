@@ -143,6 +143,32 @@ export default function POSPage() {
         });
     };
 
+    const removeFromCart = (productId: string) => {
+        setCart(prev => prev.filter(item => item.id !== productId));
+    };
+
+    const updateQuantity = (productId: string, delta: number) => {
+        setCart(prev => prev.map(item => {
+            if (item.id === productId) {
+                const newQty = item.quantity + delta;
+                if (newQty < 1) {
+                    // Remove item if quantity would be less than 1
+                    return null;
+                }
+                if (newQty > item.totalStock) {
+                    toast({
+                        title: "Limit Reached",
+                        description: `Only ${item.totalStock} units available.`,
+                        variant: "destructive"
+                    });
+                    return item;
+                }
+                return { ...item, quantity: newQty };
+            }
+            return item;
+        }).filter(Boolean) as any[]); // Remove null items
+    };
+
     const subtotal = cart.reduce((sum, item) => sum + (item.sellingPrice * item.quantity), 0);
     const taxAmount = (subtotal - discountAmount) * (taxRate / 100);
     const netAmount = Math.max(0, subtotal - discountAmount + taxAmount);
@@ -217,12 +243,12 @@ export default function POSPage() {
     const totalSplitPaid = splitPayments.reduce((sum, p) => sum + p.amount, 0);
 
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)]">
+        <div className="flex flex-col">
             <PageHeader title="Retail POS" description="High-speed Point of Sale with multi-payment and categories." />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden mt-4">
-                <div className="lg:col-span-2 flex flex-col gap-4 overflow-hidden">
-                    <Card className="flex-1 flex flex-col overflow-hidden border-none shadow-none bg-background/50">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4 pb-6">
+                <div className="lg:col-span-2 flex flex-col gap-4">
+                    <Card className="flex flex-col border-none shadow-none bg-background/50 h-[calc(100vh-12rem)] overflow-hidden">
                         <CardHeader className="pb-3 px-0 space-y-4">
                             <div className="flex items-center gap-4">
                                 <div className="relative flex-1">
@@ -337,29 +363,35 @@ export default function POSPage() {
                     </Card>
                 </div>
 
-                <div className="flex flex-col gap-4 overflow-hidden">
-                    <Card className="flex-1 flex flex-col overflow-hidden border-2 shadow-sm">
-                        <CardHeader className="border-b pb-4 bg-muted/20">
-                            <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-                                <SelectTrigger className="h-11 border-2 font-bold">
-                                    <SelectValue placeholder="Select Customer" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="GUEST" className="font-bold text-primary">Walk-in Customer</SelectItem>
-                                    {customers.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                <div className="flex flex-col gap-4">
+                    <Card className="flex flex-col border-2 shadow-lg">
+                        {/* Order Info Section */}
+                        <CardHeader className="border-b pb-4 bg-gradient-to-br from-muted/30 to-muted/10 space-y-3">
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Customer</label>
+                                <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
+                                    <SelectTrigger className="h-12 border-2 font-semibold text-base shadow-sm">
+                                        <SelectValue placeholder="Select Customer" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="GUEST" className="font-bold text-primary">🚶 Walk-in Customer</SelectItem>
+                                        {customers.map(c => (
+                                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+
+                        {/* Cart Items Section */}
+                        <CardContent className="p-4">
                             {cart.length === 0 ? (
                                 <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-50">
                                     <ShoppingCart className="h-12 w-12 mb-2" />
                                     <p className="text-sm">Scan items to start</p>
                                 </div>
                             ) : (
-                                <div className="space-y-3">
+                                <div className="space-y-3">\n
                                     {cart.map(item => (
                                         <div key={item.id} className="bg-background p-3 rounded-lg border shadow-sm space-y-3">
                                             <div className="flex justify-between items-start gap-2">
@@ -391,79 +423,138 @@ export default function POSPage() {
                             )}
                         </CardContent>
 
-                        <div className="p-4 bg-background border-t space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase text-muted-foreground flex items-center justify-between">
-                                    <span>Payments</span>
-                                    <Button variant="ghost" size="sm" className="h-4 p-0 text-primary" onClick={addPaymentLine}>+ Add Method</Button>
-                                </label>
-                                <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1">
-                                    {splitPayments.map((p, i) => (
-                                        <div key={i} className="flex gap-2 items-center">
-                                            <Select value={p.accountId} onValueChange={(v) => updatePaymentLine(i, 'accountId', v)}>
-                                                <SelectTrigger className="h-8 text-xs flex-1">
-                                                    <SelectValue placeholder="Account" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <Input
-                                                type="number"
-                                                className="h-8 w-20 text-xs font-bold"
-                                                value={p.amount}
-                                                onChange={(e) => updatePaymentLine(i, 'amount', parseFloat(e.target.value) || 0)}
-                                            />
-                                            {splitPayments.length > 1 && (
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removePaymentLine(i)}>
-                                                    <Trash2 className="h-3 w-3" />
-                                                </Button>
-                                            )}
+                        {/* Payment & Summary Section */}
+                        <div className="border-t bg-gradient-to-b from-muted/10 to-muted/20">
+                            <div className="p-5 space-y-5">
+                                {/* Payment Methods Section */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                            <Wallet className="h-3.5 w-3.5" />
+                                            Payment Methods
+                                        </label>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 text-xs font-semibold border-dashed hover:border-solid"
+                                            onClick={addPaymentLine}
+                                        >
+                                            <Plus className="h-3 w-3 mr-1" /> Add Method
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2.5">
+                                        {splitPayments.map((p, i) => (
+                                            <div key={i} className="flex gap-2 items-center bg-background/60 p-2.5 rounded-lg border shadow-sm">
+                                                <Select value={p.accountId} onValueChange={(v) => updatePaymentLine(i, 'accountId', v)}>
+                                                    <SelectTrigger className="h-9 text-sm flex-1 font-medium">
+                                                        <SelectValue placeholder="Select Account" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {accounts.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-muted-foreground">$</span>
+                                                    <Input
+                                                        type="number"
+                                                        step="0.01"
+                                                        placeholder="0.00"
+                                                        className="h-9 w-24 text-sm font-bold text-right"
+                                                        value={p.amount || ''}
+                                                        onChange={(e) => updatePaymentLine(i, 'amount', parseFloat(e.target.value) || 0)}
+                                                    />
+                                                </div>
+                                                {splitPayments.length > 1 && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                        onClick={() => removePaymentLine(i)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <Separator className="my-4" />
+
+                                {/* Order Summary Section */}
+                                <div className="space-y-3 bg-background/40 p-4 rounded-lg border">
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Subtotal</span>
+                                            <span className="font-semibold">${subtotal.toFixed(2)}</span>
                                         </div>
-                                    ))}
+                                        <div className="flex justify-between text-sm items-center">
+                                            <span className="text-muted-foreground">Discount</span>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-xs text-muted-foreground">$</span>
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    className="h-7 w-20 text-xs font-semibold text-right"
+                                                    value={discountAmount || ''}
+                                                    onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Tax ({taxRate.toFixed(1)}%)</span>
+                                            <span className="font-semibold">${taxAmount.toFixed(2)}</span>
+                                        </div>
+                                    </div>
+
+                                    <Separator />
+
+                                    <div className="space-y-2 pt-1">
+                                        <div className="flex justify-between items-baseline">
+                                            <span className="text-lg font-black">Total Due</span>
+                                            <span className="text-3xl font-black text-primary">${netAmount.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm items-center">
+                                            <span className="font-semibold">Amount Paid</span>
+                                            <span className={cn(
+                                                "text-lg font-bold",
+                                                totalSplitPaid >= netAmount ? "text-green-600" : "text-amber-600"
+                                            )}>
+                                                ${totalSplitPaid.toFixed(2)}
+                                            </span>
+                                        </div>
+                                        {totalSplitPaid < netAmount && totalSplitPaid > 0 && (
+                                            <div className="flex justify-between text-sm items-center pt-1 border-t border-dashed">
+                                                <span className="font-semibold text-destructive">Balance Due</span>
+                                                <span className="text-base font-bold text-destructive">
+                                                    ${(netAmount - totalSplitPaid).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {/* Complete Order Button */}
+                                <Button
+                                    className="w-full h-14 text-lg font-black shadow-xl bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary transition-all duration-200"
+                                    size="lg"
+                                    disabled={loading || cart.length === 0}
+                                    onClick={handleCheckout}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CreditCard className="mr-2 h-5 w-5" />
+                                            Complete Order
+                                        </>
+                                    )}
+                                </Button>
                             </div>
-
-                            <Separator />
-
-                            <div className="space-y-1">
-                                <div className="flex justify-between text-xs text-muted-foreground">
-                                    <span>Subtotal</span>
-                                    <span>${subtotal.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-xs text-muted-foreground items-center">
-                                    <span>Discount</span>
-                                    <Input
-                                        type="number"
-                                        className="h-6 w-16 text-[10px] p-1 text-right"
-                                        value={discountAmount}
-                                        onChange={(e) => setDiscountAmount(parseFloat(e.target.value) || 0)}
-                                    />
-                                </div>
-                                <div className="flex justify-between text-xs text-muted-foreground items-center">
-                                    <span>Tax ({taxRate}%)</span>
-                                    <span>${taxAmount.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between font-black text-2xl pt-2">
-                                    <span>Total Due</span>
-                                    <span className="text-primary">${netAmount.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-bold pt-1">
-                                    <span>Amount Paid</span>
-                                    <span className={cn(totalSplitPaid >= netAmount ? "text-green-600" : "text-amber-600")}>
-                                        ${totalSplitPaid.toFixed(2)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <Button
-                                className="w-full h-14 text-lg font-black shadow-xl bg-primary hover:bg-primary/90"
-                                size="lg"
-                                disabled={loading || cart.length === 0}
-                                onClick={handleCheckout}
-                            >
-                                {loading ? "Processing..." : <><CreditCard className="mr-2 h-5 w-5" /> Complete Order</>}
-                            </Button>
                         </div>
                     </Card>
                 </div>

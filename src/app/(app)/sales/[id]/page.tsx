@@ -10,11 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { useBusinessInfo } from '@/hooks/use-business-info';
 
 export default function SaleDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const [sale, setSale] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const { businessInfo } = useBusinessInfo();
 
     useEffect(() => {
         const loadSale = async () => {
@@ -73,9 +75,21 @@ export default function SaleDetailsPage({ params }: { params: Promise<{ id: stri
                             <p className="text-muted-foreground font-mono text-sm">{sale.invoice?.invoiceNumber || 'N/A'}</p>
                         </div>
                         <div className="text-right">
-                            <h2 className="text-xl font-bold">E-Inventory Admin</h2>
-                            <p className="text-sm text-muted-foreground">123 Business Street, Tech City</p>
-                            <p className="text-sm text-muted-foreground">contact@e-inventory.com</p>
+                            {businessInfo?.logo && (
+                                <img src={businessInfo.logo} alt="Business Logo" className="h-12 ml-auto mb-2 object-contain" />
+                            )}
+                            <h2 className="text-xl font-bold">{businessInfo?.businessName || 'E-Inventory LTD'}</h2>
+                            {businessInfo?.address && (
+                                <p className="text-sm text-muted-foreground">{businessInfo.address}</p>
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                                {businessInfo?.email && businessInfo.email}
+                                {businessInfo?.email && businessInfo?.phone && ' • '}
+                                {businessInfo?.phone && businessInfo.phone}
+                            </p>
+                            {businessInfo?.taxId && (
+                                <p className="text-xs text-muted-foreground mt-1">Tax ID: {businessInfo.taxId}</p>
+                            )}
                         </div>
                     </div>
 
@@ -93,10 +107,10 @@ export default function SaleDetailsPage({ params }: { params: Promise<{ id: stri
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Sale Details</p>
                             <p className="text-sm"><strong>Date:</strong> {format(new Date(sale.createdAt), 'MMMM dd, yyyy')}</p>
                             <p className="text-sm"><strong>Sale #:</strong> {sale.saleNumber}</p>
-                            <p className="text-sm flex items-center justify-end gap-2 mt-2">
+                            <div className="text-sm flex items-center justify-end gap-2 mt-2">
                                 <strong>Status:</strong>
                                 <Badge variant={sale.paymentStatus === 'PAID' ? 'success' : 'warning'}>{sale.paymentStatus}</Badge>
-                            </p>
+                            </div>
                         </div>
                     </div>
 
@@ -160,7 +174,11 @@ export default function SaleDetailsPage({ params }: { params: Promise<{ id: stri
                     {/* Footer */}
                     <div className="mt-16 text-center text-muted-foreground text-xs">
                         <p className="font-bold mb-2">Thank you for your business!</p>
-                        <p>If you have any questions about this invoice, please contact us.</p>
+                        {businessInfo?.invoiceFooter ? (
+                            <p className="whitespace-pre-line">{businessInfo.invoiceFooter}</p>
+                        ) : (
+                            <p>If you have any questions about this invoice, please contact us.</p>
+                        )}
                     </div>
                 </CardContent>
             </Card>

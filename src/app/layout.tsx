@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 
 import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from '@/components/theme-provider';
+import { BusinessInfoProvider } from '@/contexts/business-info-context';
 
 export default function RootLayout({
   children,
@@ -41,8 +42,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <Toaster />
+            <BusinessInfoProvider>
+              {children}
+              <Toaster />
+            </BusinessInfoProvider>
           </ThemeProvider>
         </body>
       </html>
