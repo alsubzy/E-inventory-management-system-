@@ -14,6 +14,7 @@ import {
 import { type User } from '@/lib/types';
 import { LogOut, User as UserIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -65,8 +66,10 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
+            <Link href="/profile" className="flex items-center w-full">
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
